@@ -1,0 +1,10 @@
+# Ignore the local virtual environment directory
+venv/
+.venv/
+# Ignore Python cache files
+__pycache__
+*.pyc
+# Ignore environment variables file
+.env
+# Ignore git files
+.gitignore
