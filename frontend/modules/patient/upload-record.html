@@ -247,7 +247,7 @@
                 progressText.textContent = 'Processing files...';
                 progressBar.style.width = '30%';
 
-                const apiBase = window.AppConfig?.BACKEND_URL || 'http://localhost:8000';
+                const apiBase = window.AppConfig?.BACKEND_URL || 'https://medicalner-backend.jollyflower-205e8e1d.uaenorth.azurecontainerapps.io';
                 const response = await fetch(`${apiBase}/predict_multiple_pdfs_summary`, {
                     method: 'POST',
                     body: formData

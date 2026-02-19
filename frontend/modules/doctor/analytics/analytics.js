@@ -42,7 +42,7 @@
   // Load summary statistics
   async function loadSummary() {
     try {
-      const apiBase = window.AppConfig?.BACKEND_URL || "http://localhost:8000";
+      const apiBase = window.AppConfig?.BACKEND_URL || "https://medicalner-backend.jollyflower-205e8e1d.uaenorth.azurecontainerapps.io";
       const response = await fetch(`${apiBase}/analytics/summary`);
       const data = await response.json();
 
@@ -83,7 +83,7 @@
   // Load top diseases and labs
   async function loadTopEntities() {
     try {
-      const apiBase = window.AppConfig?.BACKEND_URL || "http://localhost:8000";
+      const apiBase = window.AppConfig?.BACKEND_URL || "https://medicalner-backend.jollyflower-205e8e1d.uaenorth.azurecontainerapps.io";
       const response = await fetch(
         `${apiBase}/analytics/top_entities?limit=8`
       );
@@ -111,7 +111,7 @@
   // Load trends data
   async function loadTrends() {
     try {
-      const apiBase = window.AppConfig?.BACKEND_URL || "http://localhost:8000";
+      const apiBase = window.AppConfig?.BACKEND_URL || "https://medicalner-backend.jollyflower-205e8e1d.uaenorth.azurecontainerapps.io";
       const response = await fetch(
         `${apiBase}/analytics/trends?days=30`
       );
@@ -143,7 +143,7 @@
       '<p class="loading">Analyzing disease patterns...</p>';
 
     try {
-      const apiBase = window.AppConfig?.BACKEND_URL || "http://localhost:8000";
+      const apiBase = window.AppConfig?.BACKEND_URL || "https://medicalner-backend.jollyflower-205e8e1d.uaenorth.azurecontainerapps.io";
       const response = await fetch(
         `${apiBase}/analytics/outbreak_detection?threshold=${threshold}`
       );

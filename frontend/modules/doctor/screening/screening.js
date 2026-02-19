@@ -3,7 +3,7 @@
 class MedicalScreening {
   constructor() {
     // Use centralized config for backend URL
-    this.apiBase = window.AppConfig?.BACKEND_URL || "http://localhost:8000";
+    this.apiBase = window.AppConfig?.BACKEND_URL || "https://medicalner-backend.jollyflower-205e8e1d.uaenorth.azurecontainerapps.io";
     this.currentResults = [];
     this.screeningRules = null;
     this.riskThreshold = 60;

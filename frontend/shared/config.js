@@ -35,7 +35,7 @@
 
   const AppConfig = {
     // Backend API base URL
-    BACKEND_URL: "http://medicalner-backend-uaenorth.uaenorth.azurecontainer.io:8000",
+    BACKEND_URL: "https://medicalner-backend.jollyflower-205e8e1d.uaenorth.azurecontainerapps.io",
     
     // Frontend base path (auto-detected)
     BASE_PATH: detectBasePath(),

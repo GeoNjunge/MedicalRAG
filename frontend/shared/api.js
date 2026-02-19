@@ -2,7 +2,7 @@
 class MedicalAPI {
   constructor(baseURL = null) {
     // Use config if available, otherwise fallback to default
-    this.baseURL = baseURL || (window.AppConfig?.BACKEND_URL || "http://localhost:8000");
+    this.baseURL = baseURL || (window.AppConfig?.BACKEND_URL || "https://medicalner-backend.jollyflower-205e8e1d.uaenorth.azurecontainerapps.io");
     this.token = localStorage.getItem("auth_token") || null;
   }
 
