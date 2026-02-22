@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medical Screening | Document Analyzer</title>
-    <link rel="stylesheet" href="../../../base.css">
+    <link rel="stylesheet" href="/frontend/base.css">
     <link rel="stylesheet" href="screening.css">
-    <link rel="stylesheet" href="../dashboard.css">
+    <link rel="stylesheet" href="/frontend/modules/doctor/dashboard.css">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="../../../shared/nav-loader.js" defer></script>
+    <script src="/frontend/shared/nav-loader.js" defer></script>
 </head>
 
 <body>
@@ -22,10 +22,13 @@
         <a href="/frontend/modules/doctor/patients/manage.html" class="nav-link">
             <i class="fas fa-users"></i> Patients
         </a>
-        <a href="/frontend/modules/doctor/appointments/manage.html" class="nav-link active">
+        <a href="/frontend/modules/doctor/appointments/manage.html" class="nav-link">
             <i class="fas fa-calendar-check"></i> Appointments
         </a>
-        <a href="/frontend/modules/doctor/screening/screening.html" class="nav-link">
+        <a href="/frontend/modules/doctor/medications/manage.html" class="nav-link">
+            <i class="fas fa-pills"></i> Medications
+        </a>
+        <a href="/frontend/modules/doctor/screening/screening.html" class="nav-link active">
             <i class="fas fa-search-medical"></i> Screening
         </a>
         <a href="/frontend/modules/doctor/analytics/analytics.html" class="nav-link">
@@ -196,11 +199,9 @@
         </div>
     </main>
 
-    <script src="../../../shared/config.js"></script>
-    <script src="../../../shared/router.js"></script>
-    <script src="../../../shared/api.js"></script>
-    <script src="../../../shared/utils.js"></script>
-    <script src="../../../auth/auth.js"></script>
+    <script src="/frontend/shared/api.js"></script>
+    <script src="/frontend/shared/utils.js"></script>
+    <script src="/frontend/auth/auth.js"></script>
     <script src="screening.js"></script>
     <script>
         // Check auth on page load

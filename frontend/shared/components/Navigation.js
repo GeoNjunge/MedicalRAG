@@ -1,23 +1,21 @@
 (function () {
   "use strict";
 
-  // Get base path from config (will be set after config.js loads)
-  function getBasePath() {
-    return window.AppConfig?.BASE_PATH || "/frontend";
-  }
+  // Base URL for all frontend links (can be overridden before this script loads)
+  const FRONTEND_BASE = window.FRONTEND_BASE || "/frontend";
 
   const navigationConfig = {
     doctor: [
-      { name: "Dashboard", path: () => `${getBasePath()}/modules/doctor/dashboard.html` },
-      { name: "Patient Management", path: () => `${getBasePath()}/modules/doctor/patients/manage.html` },
-      { name: "Medical Screening", path: () => `${getBasePath()}/modules/doctor/screening/screening.html` },
-      { name: "Analytics", path: () => `${getBasePath()}/modules/doctor/analytics/analytics.html` },
-      { name: "Profile", path: () => `${getBasePath()}/modules/doctor/profile/profile.html` },
+      { name: "Dashboard", path: `${FRONTEND_BASE}/modules/doctor/dashboard.html` },
+      { name: "Patient Management", path: `${FRONTEND_BASE}/modules/doctor/patients/manage.html` },
+      { name: "Medical Screening", path: `${FRONTEND_BASE}/modules/doctor/screening/screening.html` },
+      { name: "Analytics", path: `${FRONTEND_BASE}/modules/doctor/analytics/analytics.html` },
+      { name: "Profile", path: `${FRONTEND_BASE}/modules/doctor/profile/profile.html` },
     ],
     patient: [
-      { name: "Dashboard", path: () => `${getBasePath()}/modules/patient/dashboard.html` },
-      { name: "My Records", path: () => `${getBasePath()}/modules/patient/records/view.html` },
-      { name: "Profile", path: () => `${getBasePath()}/modules/patient/profile/profile.html` },
+      { name: "Dashboard", path: `${FRONTEND_BASE}/modules/patient/dashboard.html` },
+      { name: "My Records", path: `${FRONTEND_BASE}/modules/patient/records/view.html` },
+      { name: "Profile", path: `${FRONTEND_BASE}/modules/patient/profile/profile.html` },
     ],
   };
 
@@ -27,9 +25,8 @@
 
     const linksHtml = items
       .map((item) => {
-        const path = typeof item.path === 'function' ? item.path() : item.path;
-        const active = currentPath === path || currentPath.endsWith(path);
-        return `<a href="${path}" class="nav-link${active ? " active" : ""}">
+        const active = currentPath === item.path;
+        return `<a href="${item.path}" class="nav-link${active ? " active" : ""}">
           <span>${item.name}</span>
         </a>`;
       })

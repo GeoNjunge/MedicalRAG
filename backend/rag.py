@@ -1,5 +1,5 @@
 # rag.py (modified to include import time in responses)
-from http.client import HTTPException
+from fastapi import HTTPException
 import re
 import time
 from datetime import datetime, timedelta
@@ -101,7 +101,7 @@ else:
 # ----------------------------
 # Disease NER Model
 # ----------------------------
-DISEASE_MODEL_DIR = "diseases_model"
+DISEASE_MODEL_DIR = "./diseases_model"
 d_tokenizer = AutoTokenizer.from_pretrained(DISEASE_MODEL_DIR)
 d_model = AutoModelForTokenClassification.from_pretrained(DISEASE_MODEL_DIR)
 # move model once to device for manual inference
@@ -548,21 +548,20 @@ FALSE_POSITIVE_PATTERNS = [
     r"^increased\s+\d+",
 ]
 
-
 def is_valid_lab_result(lab_name: str, value: str = None) -> bool:
     """
     Validate if a potential lab result is actually a lab test.
     """
     if not lab_name:
         return False
-
+    
     lab_lower = lab_name.lower().strip()
-
+    
     # Check against false positive patterns
     for pattern in FALSE_POSITIVE_PATTERNS:
         if re.match(pattern, lab_lower, re.IGNORECASE):
             return False
-
+    
     # Must have a numeric value
     if value:
         try:
@@ -571,34 +570,32 @@ def is_valid_lab_result(lab_name: str, value: str = None) -> bool:
             return False
     else:
         return False
-
+    
     # Check if it's a known lab test
     if lab_lower in KNOWN_LAB_TESTS:
         return True
-
+    
     # Check if it contains common lab test keywords
-    lab_keywords = ["test", "level", "count",
-                    "concentration", "ratio", "index", "rate"]
+    lab_keywords = ["test", "level", "count", "concentration", "ratio", "index", "rate"]
     if any(keyword in lab_lower for keyword in lab_keywords):
         return True
-
+    
     # Check if it's a reasonable length (not too short, not too long)
     if len(lab_name) < 3 or len(lab_name) > 50:
         return False
-
+    
     # Exclude common non-lab words
-    excluded_words = {"page", "of", "ref", "dob", "age", "no", "dept", "source", "type",
-                      "collected", "printed", "referred", "departments", "jalans", "sel",
-                      "kdigo", "thresholds", "values", "within", "least", "increased", "a",
-                      "to", "the", "and", "or", "is", "are", "was", "were"}
+    excluded_words = {"page", "of", "ref", "dob", "age", "no", "dept", "source", "type", 
+                     "collected", "printed", "referred", "departments", "jalans", "sel",
+                     "kdigo", "thresholds", "values", "within", "least", "increased", "a", 
+                     "to", "the", "and", "or", "is", "are", "was", "were"}
     if lab_lower in excluded_words:
         return False
-
+    
     # If it has a unit, it's more likely to be a lab test
     # This will be checked in the regex pattern
-
+    
     return True
-
 
 def extract_labs_with_regex(text: str):
     """
@@ -608,20 +605,19 @@ def extract_labs_with_regex(text: str):
     # More specific pattern: lab name (2+ chars, not just numbers) followed by value and optional unit
     # Pattern 1: "LabName: value unit" or "LabName value unit"
     pattern1 = r"([A-Za-z][A-Za-z0-9\s/&-]{2,30}?)\s*[:=]\s*([\d.,]+)\s*(mg/dL|mmol/L|g/dL|%|U/L|mEq/L|ng/mL|µg/dL|pg/mL|IU/L|mIU/L|×10[³⁹]|10\^3|10\^9)?"
-
+    
     # Pattern 2: Common lab test names followed by value
     pattern2 = r"\b(Glucose|WBC|RBC|Hemoglobin|HGB|Hematocrit|HCT|Platelet|Creatinine|BUN|ALT|AST|Cholesterol|Triglyceride|Albumin|Bilirubin|Sodium|Potassium|Calcium|Phosphorus|Magnesium|TSH|T4|T3|HbA1c|HbA|LDL|HDL|CRP|ESR|PT|INR|APTT|PSA|Vitamin\s+D|Vitamin\s+B12|Folate|Iron|Ferritin|Uric\s+Acid|Alkaline\s+Phosphatase|ALP|GGT|LDH|CK|Troponin|BNP|NT-proBNP|D-dimer|Fibrinogen|Protein|Globulin|A/G\s+Ratio|Bicarbonate|CO2|Chloride|Anion\s+Gap|Osmolality|Urea|eGFR|GFR|Microalbumin|Urine\s+Protein|Urine\s+Glucose)\s*[:=]?\s*([\d.,]+)\s*(mg/dL|mmol/L|g/dL|%|U/L|mEq/L|ng/mL|µg/dL|pg/mL|IU/L|mIU/L|×10[³⁹]|10\^3|10\^9)?"
-
+    
     labs = []
     seen = set()  # Track seen labs to avoid duplicates
-
+    
     # Try pattern 1 (general pattern)
     for match in re.finditer(pattern1, text, re.IGNORECASE):
         lab_name = match.group(1).strip()
         value = match.group(2).strip()
-        unit = match.group(
-            3) if match.lastindex >= 3 and match.group(3) else None
-
+        unit = match.group(3) if match.lastindex >= 3 and match.group(3) else None
+        
         # Validate
         if is_valid_lab_result(lab_name, value):
             # Create unique key to avoid duplicates
@@ -637,14 +633,13 @@ def extract_labs_with_regex(text: str):
                     value=value,
                     unit=unit
                 ))
-
+    
     # Try pattern 2 (known lab tests)
     for match in re.finditer(pattern2, text, re.IGNORECASE):
         lab_name = match.group(1).strip()
         value = match.group(2).strip()  # Value is group 2
-        unit = match.group(3) if match.lastindex >= 3 and match.group(
-            3) else None  # Unit is group 3
-
+        unit = match.group(3) if match.lastindex >= 3 and match.group(3) else None  # Unit is group 3
+        
         # Validate
         if is_valid_lab_result(lab_name, value):
             key = f"{lab_name.lower()}:{value}"
@@ -659,7 +654,7 @@ def extract_labs_with_regex(text: str):
                     value=value,
                     unit=unit
                 ))
-
+    
     return labs
 
 # Summary
@@ -810,25 +805,25 @@ Return ONLY the JSON array, nothing else:
 
     entities: List[Entity] = []
     seen = set()  # Track seen labs to avoid duplicates
-
+    
     for lab in labs:
         test_name = lab.get("test", "").strip()
         value = lab.get("value", "").strip()
-
+        
         # Validate the extracted lab result
         if not test_name or not value:
             continue
-
+        
         # Additional validation
         if not is_valid_lab_result(test_name, value):
             continue
-
+        
         # Create unique key to avoid duplicates
         key = f"{test_name.lower()}:{value}"
         if key in seen:
             continue
         seen.add(key)
-
+        
         entities.append(Entity(
             text=test_name,
             start=lab.get("start", 0) or 0,
@@ -895,25 +890,25 @@ def predict_with_sliding_window(text, tokenizer, model, label_map, max_length, s
     # Merge consecutive disease tokens (B-Disease and I-Disease)
     all_preds = sorted(all_preds, key=lambda x: (x["start"], x["end"]))
     merged = []
-
+    
     for p in all_preds:
         if not merged:
             merged.append(p.copy())
             continue
-
+        
         last = merged[-1]
-
+        
         # Check if both are disease labels (B-Disease or I-Disease)
         is_disease_current = p["label"] in ["B-Disease", "I-Disease"]
         is_disease_last = last["label"] in ["B-Disease", "I-Disease"]
-
+        
         # Merge if:
         # 1. Both are disease labels (B-Disease or I-Disease) and adjacent/overlapping
         # 2. Same label and overlapping
         # 3. Adjacent tokens (within 3 characters to account for whitespace/punctuation)
         gap = p["start"] - last["end"]
         is_adjacent = gap <= 3  # Allow small gap for whitespace/punctuation
-
+        
         if (is_disease_current and is_disease_last and is_adjacent) or \
            (p["label"] == last["label"] and (p["start"] <= last["end"] or is_adjacent)):
             # Merge: extend the end position and update score (use max or average)
@@ -927,7 +922,7 @@ def predict_with_sliding_window(text, tokenizer, model, label_map, max_length, s
                 last["label"] = "I-Disease"
         else:
             merged.append(p.copy())
-
+    
     # Filter by threshold and extract text
     result = []
     for p in merged:
@@ -942,7 +937,7 @@ def predict_with_sliding_window(text, tokenizer, model, label_map, max_length, s
                     "entity_type": "Disease",  # Normalize to "Disease" for output
                     "confidence": round(p["score"], 4)
                 })
-
+    
     return result
 
 # ----------------------------
@@ -1171,24 +1166,22 @@ async def predict_combined_rag(req: TextRequest, store: bool = Form(False),
             if not merged_preds:
                 merged_preds.append(p.copy() if isinstance(p, dict) else p)
                 continue
-
+            
             last = merged_preds[-1]
             # Get entity group/label (pipeline uses "entity_group" after aggregation)
-            current_label = str(p.get("entity_group")
-                                or p.get("entity") or "").lower()
-            last_label = str(last.get("entity_group")
-                             or last.get("entity") or "").lower()
-
+            current_label = str(p.get("entity_group") or p.get("entity") or "").lower()
+            last_label = str(last.get("entity_group") or last.get("entity") or "").lower()
+            
             # Check if both are disease entities
             is_disease = "disease" in current_label
             is_last_disease = "disease" in last_label
-
+            
             current_start = p.get("start", 0)
             current_end = p.get("end", 0)
             last_end = last.get("end", 0)
-
+            
             gap = current_start - last_end
-
+            
             # Merge if both are diseases and adjacent (within 3 chars for whitespace)
             if is_disease and is_last_disease and gap <= 3:
                 # Merge: combine text and extend end position
@@ -1208,7 +1201,7 @@ async def predict_combined_rag(req: TextRequest, store: bool = Form(False),
                 last["score"] = (last_score + current_score) / 2.0
             else:
                 merged_preds.append(p.copy() if isinstance(p, dict) else p)
-
+        
         diseases = [
             Entity(
                 text=p.get("word") or p.get("entity"),
@@ -1329,7 +1322,7 @@ async def predict_combined_pdf(file: UploadFile = File(...), icd_map: bool = For
 # Multi document endpoint
 @app.post("/predict_multiple_pdfs", response_model=List[CombinedNERResponse])
 async def predict_multiple_pdfs(
-    files: List[UploadFile] = File(...),
+    files: List[UploadFile] = File(...), 
     icd_map: bool = Form(False),
     store: bool = Form(False),
     patient_id: Optional[str] = Form(None)
@@ -1420,7 +1413,7 @@ async def predict_multiple_pdfs(
 # Cross document summary
 @app.post("/predict_multiple_pdfs_summary")
 async def predict_multiple_pdfs_consolidated(
-    files: List[UploadFile] = File(...),
+    files: List[UploadFile] = File(...), 
     icd_map: bool = Form(False),
     store: bool = Form(False),
     patient_id: Optional[str] = Form(None)

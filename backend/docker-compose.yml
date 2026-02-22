@@ -1,0 +1,39 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: medicalner-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: medicalner-backend
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    ports:
+      - "8000:8000"
+    environment:
+      # Point backend at the compose MongoDB service
+      MONGO_DB_URI: "mongodb+srv://njunge995:Cu1MuUdEo4wwv5DQ@cluster0.s7dht.mongodb.net/?appName=Cluster0"
+      MONGO_DB_NAME: "medical_rag_db"
+
+      # Set these to whatever you use in prod (safe defaults for dev)
+      JWT_SECRET_KEY: "dev-secret-change-me"
+      GOOGLE_API_KEY: "${GOOGLE_API_KEY:-}"
+
+      # Helps file watching behave inside containers on some hosts
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      # Bind-mount local backend code into the container so edits apply immediately
+      - ./backend:/app
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+volumes:
+  mongo_data:
+

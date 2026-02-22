@@ -1,8 +1,7 @@
 // Updated API client with auth support
 class MedicalAPI {
-  constructor(baseURL = null) {
-    // Use config if available, otherwise fallback to default
-    this.baseURL = baseURL || (window.AppConfig?.BACKEND_URL || "https://medicalner-backend.jollyflower-205e8e1d.uaenorth.azurecontainerapps.io");
+  constructor(baseURL = "http://localhost:8000") {
+    this.baseURL = baseURL;
     this.token = localStorage.getItem("auth_token") || null;
   }
 
@@ -58,6 +57,53 @@ class MedicalAPI {
       }
       throw new Error(`HTTP ${response.status}: ${await response.text()}`);
     }
+    return response.json();
+  }
+
+  async put(endpoint, data = {}) {
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
+    if (this.token) {
+      headers["Authorization"] = `Bearer ${this.token}`;
+    }
+
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        this.handleAuthError();
+      }
+      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    }
+    return response.json();
+  }
+
+  async delete(endpoint) {
+    const headers = {};
+    if (this.token) {
+      headers["Authorization"] = `Bearer ${this.token}`;
+    }
+
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
+      method: "DELETE",
+      headers,
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        this.handleAuthError();
+      }
+      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    }
+
+    // 204 No Content is common for deletes
+    if (response.status === 204) return null;
     return response.json();
   }
 

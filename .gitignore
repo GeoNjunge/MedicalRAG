@@ -12,3 +12,6 @@ lab_results/
 venv/
 .venv/
 .DS_Store
+template.*
+__pycache__/
+template/

@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Medical Records - Medical RAG</title>
-    <link rel="stylesheet" href="../../../base.css">
-    <link rel="stylesheet" href="../dashboard.css">
+    <link rel="stylesheet" href="/frontend/base.css">
+    <link rel="stylesheet" href="/frontend/modules/patient/dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .records-container {
@@ -142,7 +142,7 @@
     </div>
 
     <!-- Record Detail Modal -->
-    <div id="record-detail-modal" class="modal hidden">
+    <div id="record-detail-modal" class="modal hidden" aria-hidden="true">
         <div class="modal-backdrop" onclick="closeRecordModal()"></div>
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
@@ -156,11 +156,9 @@
     </div>
 
     <!-- Scripts -->
-    <script src="../../../shared/config.js"></script>
-    <script src="../../../shared/router.js"></script>
-    <script src="../../../shared/api.js"></script>
-    <script src="../../../shared/utils.js"></script>
-    <script src="../../../auth/auth.js"></script>
+    <script src="/frontend/shared/api.js"></script>
+    <script src="/frontend/shared/utils.js"></script>
+    <script src="/frontend/auth/auth.js"></script>
     <script>
         // Check auth on page load
         document.addEventListener('DOMContentLoaded', function () {
@@ -218,6 +216,13 @@
                         </td>
                     </tr>
                 `).join('');
+
+                // If navigated with a record_id, auto-open that record
+                const params = new URLSearchParams(window.location.search);
+                const recordIdFromUrl = params.get('record_id') || params.get('id');
+                if (recordIdFromUrl) {
+                    viewRecord(recordIdFromUrl);
+                }
             } catch (error) {
                 console.error('Error loading records:', error);
                 document.getElementById('records-loading').innerHTML =
@@ -258,7 +263,10 @@
                     </div>
                 `;
 
-                document.getElementById('record-detail-modal').classList.remove('hidden');
+                const modal = document.getElementById('record-detail-modal');
+                modal.classList.remove('hidden');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
             } catch (error) {
                 console.error('Error loading record:', error);
                 alert('Error loading record details');
@@ -266,8 +274,15 @@
         }
 
         function closeRecordModal() {
-            document.getElementById('record-detail-modal').classList.add('hidden');
+            const modal = document.getElementById('record-detail-modal');
+            modal.classList.add('hidden');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
         }
+
+        // Expose to inline onclick handlers
+        window.viewRecord = viewRecord;
+        window.closeRecordModal = closeRecordModal;
     </script>
 </body>
 

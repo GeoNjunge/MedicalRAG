@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8" />
     <title>Medical Document Analyzer - Analytics</title>
-    <link rel="stylesheet" href="../../../base.css">
-    <link rel="stylesheet" href="../dashboard.css">
+    <link rel="stylesheet" href="/frontend/base.css">
+    <link rel="stylesheet" href="/frontend/modules/doctor/dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="analytics.css">
-    <script src="../../../assets/chart.umd.js"></script>
+    <script src="/frontend/assets/chart.umd.js"></script>
 </head>
 
 <body>
@@ -23,13 +23,16 @@
         <a href="/frontend/modules/doctor/patients/manage.html" class="nav-link">
             <i class="fas fa-users"></i> Patients
         </a>
-        <a href="/frontend/modules/doctor/appointments/manage.html" class="nav-link active">
+        <a href="/frontend/modules/doctor/appointments/manage.html" class="nav-link">
             <i class="fas fa-calendar-check"></i> Appointments
+        </a>
+        <a href="/frontend/modules/doctor/medications/manage.html" class="nav-link">
+            <i class="fas fa-pills"></i> Medications
         </a>
         <a href="/frontend/modules/doctor/screening/screening.html" class="nav-link">
             <i class="fas fa-search-medical"></i> Screening
         </a>
-        <a href="/frontend/modules/doctor/analytics/analytics.html" class="nav-link">
+        <a href="/frontend/modules/doctor/analytics/analytics.html" class="nav-link active">
             <i class="fas fa-file-medical"></i> Records
         </a>
         <div class="nav-spacer"></div>
@@ -121,14 +124,12 @@
         </div>
     </div>
 
-    <script src="../../../shared/config.js"></script>
-    <script src="../../../shared/router.js"></script>
-    <script src="../../../shared/api.js"></script>
-    <script src="../../../shared/utils.js"></script>
-    <script src="../../../auth/auth.js"></script>
+    <script src="/frontend/shared/api.js"></script>
+    <script src="/frontend/shared/utils.js"></script>
+    <script src="/frontend/auth/auth.js"></script>
     <script>
         // Load navigation
-        fetch(window.AppConfig?.getPath('shared/nav.html') || '/frontend/shared/nav.html')
+        fetch('/frontend/shared/nav.html')
             .then(response => response.text())
             .then(html => {
                 document.getElementById('navigation').innerHTML = html;
@@ -179,7 +180,7 @@
         });
     </script>
     <script src="analytics.js" defer></script>
-    <script src="../dashboard.js"></script>
+    <script src="/frontend/modules/doctor/dashboard.js"></script>
 
 </body>
 

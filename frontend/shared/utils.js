@@ -36,13 +36,4 @@ window.Utils = {
       timeout = setTimeout(later, wait);
     };
   },
-  
-  // Routing helpers
-  getPath(relativePath) {
-    return window.AppConfig?.getPath(relativePath) || relativePath;
-  },
-  
-  getUrl(relativePath) {
-    return window.AppConfig?.getUrl(relativePath) || relativePath;
-  },
 };

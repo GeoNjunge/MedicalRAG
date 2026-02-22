@@ -385,9 +385,8 @@ submitBtn.addEventListener("click", async () => {
       formData.append("icd_map", false);
 
       try {
-        const apiBase = window.AppConfig?.BACKEND_URL || "https://medicalner-backend.jollyflower-205e8e1d.uaenorth.azurecontainerapps.io";
         const resp = await fetch(
-          `${apiBase}/predict_multiple_pdfs_summary`,
+          "http://localhost:8000/predict_multiple_pdfs_summary",
           {
             method: "POST",
             body: formData,
@@ -419,8 +418,7 @@ submitBtn.addEventListener("click", async () => {
       formData.append("icd_map", false);
 
       try {
-        const apiBase = window.AppConfig?.BACKEND_URL || "https://medicalner-backend.jollyflower-205e8e1d.uaenorth.azurecontainerapps.io";
-        const resp = await fetch(`${apiBase}/predict_pdf`, {
+        const resp = await fetch("http://localhost:8000/predict_pdf", {
           method: "POST",
           body: formData,
         });
@@ -441,8 +439,7 @@ submitBtn.addEventListener("click", async () => {
     // Text input - use existing endpoint
     const payload = { text: textInput.value, icd_map: false };
     try {
-      const apiBase = window.AppConfig?.BACKEND_URL || "https://medicalner-backend.jollyflower-205e8e1d.uaenorth.azurecontainerapps.io";
-      const resp = await fetch(`${apiBase}/predict`, {
+      const resp = await fetch("http://localhost:8000/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

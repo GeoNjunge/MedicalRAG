@@ -163,8 +163,7 @@
             btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
             // Redirect to login
             setTimeout(() => {
-              const loginPath = window.AppConfig?.getPath('auth/login.html') || "/frontend/auth/login.html";
-              window.location.href = loginPath;
+              window.location.href = "/frontend/auth/login.html";
             }, 2000);
           }
         }, 2000);
@@ -281,22 +280,18 @@
     }
 
     redirectToDashboard(role) {
-      // Always call through AppConfig to keep correct `this` binding
-      const resolvePath = (p) =>
-        window.AppConfig ? window.AppConfig.getPath(p) : p;
-
       switch (role) {
         case "doctor":
-          window.location.href = resolvePath("modules/doctor/dashboard.html");
+          window.location.href = "/frontend/modules/doctor/dashboard.html";
           break;
         case "patient":
-          window.location.href = resolvePath("modules/patient/dashboard.html");
+          window.location.href = "/frontend/modules/patient/dashboard.html";
           break;
         case "admin":
-          window.location.href = resolvePath("modules/admin/dashboard.html");
+          window.location.href = "/frontend/modules/admin/dashboard.html";
           break;
         default:
-          window.location.href = resolvePath("index.html");
+          window.location.href = "/frontend/index.html";
       }
     }
 
@@ -381,8 +376,7 @@
       }
 
       // Redirect to login
-      const loginPath = window.AppConfig?.getPath('auth/login.html') || "/frontend/auth/login.html";
-      window.location.href = loginPath;
+      window.location.href = "/frontend/auth/login.html";
     }
   }
 

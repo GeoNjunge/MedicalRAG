@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Medical Record - Medical RAG</title>
-    <link rel="stylesheet" href="../../base.css">
-    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="/frontend/base.css">
+    <link rel="stylesheet" href="/frontend/modules/patient/dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .upload-section {
@@ -125,11 +125,9 @@
     </div>
 
     <!-- Scripts -->
-    <script src="../../shared/config.js"></script>
-    <script src="../../shared/router.js"></script>
-    <script src="../../shared/api.js"></script>
-    <script src="../../shared/utils.js"></script>
-    <script src="../../auth/auth.js"></script>
+    <script src="/frontend/shared/api.js"></script>
+    <script src="/frontend/shared/utils.js"></script>
+    <script src="/frontend/auth/auth.js"></script>
     <script>
         // Check auth on page load
         document.addEventListener('DOMContentLoaded', function () {
@@ -247,8 +245,7 @@
                 progressText.textContent = 'Processing files...';
                 progressBar.style.width = '30%';
 
-                const apiBase = window.AppConfig?.BACKEND_URL || 'https://medicalner-backend.jollyflower-205e8e1d.uaenorth.azurecontainerapps.io';
-                const response = await fetch(`${apiBase}/predict_multiple_pdfs_summary`, {
+                const response = await fetch('http://localhost:8000/predict_multiple_pdfs_summary', {
                     method: 'POST',
                     body: formData
                 });
