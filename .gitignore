@@ -1,5 +1,5 @@
 key.txt
-diseases_model/
+.diseases_model/
 outputs/
 logs/
 *.pyc

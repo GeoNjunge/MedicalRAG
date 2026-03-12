@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "medical_rag_backend"
+version = "0.1.0"
+description = "Redesigned backend for Medical RAG"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "sqlalchemy",
+    "pydantic-settings",
+    # Add other dependencies from your requirements.txt
+]
+
+[tool.setuptools.packages.find]
+# This tells setuptools to look for the 'app' package in the current directory
+where = ["."]
+include = ["app*", "practice*"]
