@@ -1,8 +1,9 @@
-from app.core.logger_setup import logger, CentralizedLogger
+from app.core.logger_setup import logger, CentralizedLogger, time_metrics
 from app.worker.ai_tasks.document_reader import extract_text_from_pdf, embed_chunks_and_store_in_vector_db, chunk_text, clean_and_normalize_text
 
 logger = CentralizedLogger.get_logger(__name__)
 
+@time_metrics
 def run_ner_pipeline(file_content):
     """
     Dummy NER pipeline
