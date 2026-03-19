@@ -3,10 +3,10 @@ from app.worker.ai_tasks.document_reader import extract_text_from_pdf, embed_chu
 
 logger = CentralizedLogger.get_logger(__name__)
 
-@time_metrics
+@time_metrics()
 def run_ner_pipeline(file_content):
     """
-    Dummy NER pipeline
+    Running NER pipeline
     """
     try:
 
@@ -24,7 +24,7 @@ def run_ner_pipeline(file_content):
 
         retriever = vector_store.as_retriever(search_kwargs={"k" : 4})
 
-        return vector_store, retriever
+        return vector_store, retriever, cleaned_text
 
 
         # result = {
@@ -50,13 +50,13 @@ def run_ner_pipeline(file_content):
         raise
 
 from pathlib import Path
-file = Path("discharge_summary_examples.pdf")
+file = Path("samplePmedReport.pdf")
 
 vector_store, retriever = run_ner_pipeline(file)
 
-query = "laboratory results blood test values"
+query = "return whole document"
 
 relevant_docs = retriever.invoke(query)
 
-for i in range(3):
+for i in range(len(relevant_docs)):
     print(relevant_docs[i])

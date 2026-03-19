@@ -2,7 +2,7 @@
 
 **AI-powered patient management and lab analysis system**
 
-A scalable project system for managing patient records, appointments, and medications while leveraging Retrieval-Augmented Generation (RAG) and Named Entity Recognition (NER) to automatically extract and analyze disease information from uploaded lab results and clinical reports.
+A scalable project system for managing patient records, appointments, and medications while leveraging Retrieval-Augmented Generation (RAG) and Named Entity Recognition (NER) to automatically extract and analyze disease information from uploaded lab results and clinical reports. It also aims at enhancing privacy of patients PII data.
 
 ---
 
@@ -178,11 +178,7 @@ Reusable FastAPI dependencies for:
 
 ## 🗄️ Database Collections
 
-- `users`
 - `patient_records`
-- `appointments`
-- `medications`
-- `screening_results`
 
 Designed for horizontal scaling and future analytics pipelines.
 

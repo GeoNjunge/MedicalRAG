@@ -71,7 +71,7 @@ def clean_and_normalize_text(all_splits):
     """
 
     for i in range(len(all_splits)):
-        if "Header 2" in all_splits[i].metadata and all_splits[i].metadata["Header 2"] == 'Comments':
+        if "Header 2" in all_splits[i].metadata and all_splits[i].metadata["Header 2"] == '## Comments':
             all_splits[i].page_content = ""
 
         content = all_splits[i].page_content
@@ -104,7 +104,7 @@ chunks = chunk_text(markdown)
 
 # Path("discharge_sum.md").write_text(markdown)
 
-for split in range(3):
+for split in range(len(chunks)):
     # print(f"chunk {split}\n {chunks[split]}")
     content = chunks[split].page_content
     negative_esnts = get_negative_entities(content)

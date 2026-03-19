@@ -1,4 +1,4 @@
-from app.core.logger_setup import logger, CentralizedLogger
+from app.core.logger_setup import logger, CentralizedLogger, time_metrics
 from app.models.job import Job
 from app.database.session import SessionLocal
 from app.core.config import AppConfig 
@@ -45,8 +45,6 @@ def read_from_s3_into_memory(input_str):
             aws_secret_access_key = app_config.AWS_SECRET_KEY,
             config = boto_config
         )
-
-
        
         response = s3_client.get_object(Bucket=bucket_name, Key = actual_key)
 

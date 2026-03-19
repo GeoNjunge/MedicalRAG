@@ -26,8 +26,6 @@ class CentralizedLogger:
             new_logger.addHandler(console_handler)
             new_logger.addHandler(file_handler)
 
-                
-
             # Metrics logging
             metrics_handler = logging.FileHandler("metrics.log")
             metrics_formatter = logging.Formatter('%(asctime)s | %(message)s')
