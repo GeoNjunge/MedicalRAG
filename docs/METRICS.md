@@ -1,10 +1,18 @@
-## Text Extraction
-**Docling -(23s)** - Slow but intelligent, Uses OCR
-**PyMuPDF4llm** - 
+## 📝 Text Extraction
 
+| Method          | Notes                                                                 |
+| --------------- | --------------------------------------------------------------------- |
+| **Docling**     | Slow (~23s) but high semantic accuracy. Uses OCR for text extraction. |
+| **PyMuPDF4llm** | Will need to scale to non-pdf docs so not Multifaceted                |
 
-## Chunking
-**BioBERT Semantic (53s)**: - High accuracy, Unacceptable latency. (Failure)
-**Recursive Splitter (0.001s)**: Zero latency, Low "intelligence." (Risky for medical nuance)
-**Mini-LM Semantic (3.9s)**: Balanced.
-*Decision* - Mini-LM Semantic
+---
+
+## 📦 Chunking / Semantic Splitting
+
+| Method                 | Latency | Notes                                                                      | Decision   |
+| ---------------------- | ------- | -------------------------------------------------------------------------- | ---------- |
+| **BioBERT Semantic**   | 53s     | High accuracy, but latency too high (not practical)                        | ❌ Not used |
+| **Recursive Splitter** | 0.001s  | Extremely fast, but lacks semantic understanding (risk for medical nuance) | ❌ Not used |
+| **Mini-LM + Semantic**   | 3.9s    | Balanced between speed and semantic understanding                          | ✅ Chosen   |
+
+---

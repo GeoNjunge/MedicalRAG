@@ -1,265 +1,161 @@
-﻿# 🧠 Medical RAG 
+﻿# 🧠 Medical RAG – Hospital Document Ingestion & Automation System
 
-**AI-powered patient management and lab analysis system**
-
-A scalable project system for managing patient records, appointments, and medications while leveraging Retrieval-Augmented Generation (RAG) and Named Entity Recognition (NER) to automatically extract and analyze disease information from uploaded lab results and clinical reports. It also aims at enhancing privacy of patients PII data.
+**Backend system for automating hospital medical document processing, extracting structured insights from unstructured records, and enabling scalable AI-assisted workflows.**
 
 ---
 
 ## 🚀 Overview
 
-This project is a healthcare project built using FastAPI, MongoDB, and modern AI techniques.
-It enables patients and doctors to upload medical documents, which are then processed by a RAG pipeline that:
+Medical RAG is designed to **digitize and automate hospitals’ paper-heavy workflows**, enabling:
 
-- Extracts clinical entities (diseases, symptoms, medications)
-- Retrieves relevant medical knowledge
-- Generates contextual summaries
-- Stores structured screening insights
+* Bulk ingestion of lab reports, clinical notes, and diagnostic documents
+* Extraction of key medical entities (diseases, symptoms, medications)
+* Contextual summarization for downstream analytics
+* Storage of structured outputs for reporting and AI-driven decision support
 
-The goal is to reduce paperwork in African healthcare systems and enable digital patient records with intelligent clinical assistance.
+The platform emphasizes **automation, scalability, and reliability**, rather than direct patient-facing features.
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ Architecture
 
-The project is designed with a clean, modular, and scalable architecture:
+Modular, production-oriented backend:
 
-```
-project/
+```bash
+redesigned_backend/
+├── app/
+│   ├── api/
+│   ├── core/
+│   ├── database/
+│   ├── models/
+│   ├── queue/
+│   ├── repositories/
+│   ├── schemas/
+│   ├── services/
+│   ├── storage/
+│   └── worker/
+├── Dockerfile
+├── requirements.txt
 ├── main.py
-├── rag.py
-├── models/
-├── database/
-├── services/
-├── routes/
-└── dependencies.py
+└── .env
 ```
 
-### Key Design Principles
+**Design Principles:**
 
-- Separation of concerns
-- Microservice-ready modular structure
-- Scalable data layer
-- Secure authentication
-- Extensible AI pipeline
-- Production-grade API structure
+* Modular AI pipelines for ingestion, extraction, and summarization
+* Stateless, scalable, and cloud-ready API design
+* Clear separation of concerns between routes, services, and data layer
+* Integration-ready with hospital IT and document workflows
 
----
-
-## 🧠 AI & RAG Pipeline
-
-The core intelligence layer uses a Retrieval-Augmented Generation architecture:
-
-### ⚙️ Pipeline Flow
-
-1. Patient uploads lab result or diagnosis document
-2. Document is parsed and cleaned
-3. Clinical Named Entity Recognition (NER) detects:
-   - Diseases
-   - Symptoms
-   - Lab markers
-   - Medications
-
-4. Extracted entities are embedded and stored
-5. Relevant medical knowledge is retrieved
-6. Context + patient data are passed to an LLM
-7. A personalized clinical summary is generated
-8. Results are stored for future retrieval
-
-### 💡 Why RAG?
-
-- Reduces hallucinations in healthcare AI
-- Enables contextual, patient-specific reasoning
-- Supports explainability and traceability
-- Allows future integration with clinical knowledge bases
+📄 Full architecture: `/docs/ARCHITECTURE.md`
 
 ---
 
-## 🔬 Machine Learning & NLP
+## 🧠 AI Document Ingestion Pipeline
 
-The system integrates:
+1. Hospitals upload scanned or digital documents
+2. Text extraction & preprocessing (OCR via Docling)
+3. Named Entity Recognition (diseases, medications, lab markers)
+4. Semantic chunking and embedding for retrieval (MiniLM)
+5. RAG-based summarization and structured insight generation
+6. Results stored in a queryable MongoDB database
 
-- Medical NER for disease and symptom extraction
-- Vector search for knowledge retrieval
-- LLM-powered summarization
-- Structured clinical insights generation
+**Engineering Highlights:**
 
-The architecture supports easy migration to:
+* Deterministic multi-stage pipeline for reliability
+* Async processing via Redis RQ for bulk ingestion
+* Modular design for future integration with additional AI models
 
-- Domain-specific embeddings
-- Clinical transformers
-- Multi-modal medical data
-
----
-
-## 🧱 Backend Architecture
-
-### 1️⃣ Models Layer
-
-- Pydantic schemas for validation
-- Typed request and response objects
-- Strong API contracts
-
-### 2️⃣ Database Layer
-
-- MongoDB document models
-- Efficient indexing for medical records
-- Scalable patient data storage
-- Flexible schema for evolving healthcare needs
-
-### 3️⃣ Services Layer
-
-Contains business logic:
-
-- Authentication
-- Patient workflows
-- Appointment scheduling
-- Medication tracking
-- Screening intelligence
-
-This abstraction allows easy scaling and testing.
-
-### 4️⃣ Routes Layer
-
-Clean RESTful endpoints designed for:
-
-- Frontend integration
-- Mobile applications
-- Third-party health systems
-
-### 5️⃣ Dependency Injection
-
-Reusable FastAPI dependencies for:
-
-- Auth middleware
-- Security
-- Validation
+📄 Pipeline decisions: `/docs/MLDECISONS.md`
 
 ---
 
-## 🔐 Security & Authentication
+## ⚙️ Backend System
 
-- Password hashing using bcrypt
-- JWT token-based authentication
-- Role-based access (doctor vs patient)
-- Secure protected routes
-- Environment-based secret management
-
----
-
-## 👨‍⚕️ Core Features
-
-### 📁 Intelligent Patient Records
-
-- Upload and store medical documents
-- AI-powered screening and summarization
-- Structured clinical insights
-- Long-term digital health history
-
-### 📅 Appointments
-
-- Create, update, and manage bookings
-- Doctor–patient scheduling
-- Workflow automation
-
-### 💊 Medication Management
-
-- Track prescriptions
-- Monitor patient adherence
-- Historical medication records
-
-### 📊 Patient Dashboard
-
-- Clinical insights
-- Screening results
-- Medical history overview
+* **FastAPI REST APIs** for ingestion, processing, and querying
+* **PostgreSQL** for scalable storage of jobs and structured medical data
+* **Redis RQ** for asynchronous task management
+* Structured JSON schemas for **data consistency and versioning**
+* Secure, production-ready authentication and role-based access
 
 ---
 
-## 🗄️ Database Collections
+## ⚡ Performance & Metrics
 
-- `patient_records`
+* Optimized for **throughput and latency** in bulk document ingestion
+* Benchmarked semantic chunking, embeddings, and processing times
+* System designed for **scalable multi-hospital deployment**
 
-Designed for horizontal scaling and future analytics pipelines.
-
----
-
-## ⚡ Performance & Scalability Considerations
-
-- Stateless API design
-- Modular services for microservice migration
-- Async request handling
-- Containerization ready
-- Cloud deployment readiness (AWS, GCP, Azure)
+📄 Full metrics: `/docs/METRICS.md`
 
 ---
 
-## 🧪 Running the Application
+## 🔐 Security
 
-### 1. Install dependencies
+* JWT-based authentication and role-based access
+* Password hashing (bcrypt)
+* Environment-based secret management
+
+---
+
+## 🌐 Frontend
+
+* Angular frontend (in progress)
+* Communicates with backend via REST APIs
+* Located in `/frontend`
+
+📄 Frontend README: `/frontend/README.md`
+
+---
+
+## 🧪 Running Locally
 
 ```bash
+git clone <repo>
+cd redesigned_backend
 pip install -r requirements.txt
+uvicorn app.main:app --reload
 ```
 
-### 2. Environment variables
+**Environment Variables:**
 
 ```bash
-export MONGO_DB_URI="your_mongodb_connection_string"
-export JWT_SECRET_KEY="your_secret_key"
-export GOOGLE_API_KEY="your_gemini_api_key"
-```
+# Database URL
+DATABASE_URL=your_postgres_connection_string_here
 
-### 3. Start server
-
-```bash
-uvicorn main:app --reload
-```
-
----
-
-## 🔑 Authentication
-
-All protected routes require:
-
-```
-Authorization: Bearer <token>
-```
-
-Tokens are obtained via:
-
-```
-POST /auth/login
+# AWS S3 Configuration
+S3_BUCKET_URL=your_s3_bucket_url_here
+S3_BUCKET_NAME=your_s3_bucket_name_here
+S3_REGION_NAME=your_s3_region_here
+AWS_ACCESS_KEY=your_aws_access_key_here
+AWS_SECRET_KEY=your_aws_secret_key_here
 ```
 
 ---
 
-## 📌 Future Improvements
+## ⚠️ Current Status
 
-- Federated medical learning
-- Clinical decision support
-- Hospital system integrations
-- Explainable AI for healthcare
-- Offline-first mobile architecture
-- Multi-language support for African healthcare
+* Backend ingestion pipeline fully implemented
+* Frontend development ongoing
+* Cloud deployment in progress
+* Continuous improvements for **scalability, reliability, and throughput**
 
 ---
 
-## 🌍 Impact Vision
+## Impact
 
-This system is designed to:
-
-- Digitize African healthcare
-- Reduce patient paperwork
-- Improve accessibility
-- Enable AI-driven clinical assistance
-- Support data-driven health systems
+* Automates hospital document workflows
+* Reduces manual processing and errors
+* Provides structured medical insights for analytics
+* Designed for scale across multiple hospital systems
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 **George Njunge**
 Backend & AI Engineer
-Focused on scalable AI systems in healthcare and fintech.
+Focused on scalable backend systems and AI-driven automation
+
+---
 

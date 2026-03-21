@@ -22,6 +22,8 @@ def run_ner_pipeline(file_content):
         logger.info("Cleaned text...")
         vector_store = embed_chunks_and_store_in_vector_db(cleaned_text)
 
+        
+
         retriever = vector_store.as_retriever(search_kwargs={"k" : 4})
 
         return vector_store, retriever, cleaned_text
