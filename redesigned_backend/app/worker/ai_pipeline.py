@@ -1,64 +1,106 @@
-from app.core.logger_setup import logger, CentralizedLogger, time_metrics
-from app.worker.ai_tasks.document_reader import extract_text_from_pdf, embed_chunks_and_store_in_vector_db, chunk_text, clean_and_normalize_text
+from app.core.logger_setup import CentralizedLogger, time_metrics
+import tempfile, os
+from rq.job import Job
+from app.worker.worker import redis_conn
 
+from app.worker.ai_tasks.document_reader import (
+    extract_text_from_pdf,
+    embed_chunks_and_store_in_vector_db,
+    chunk_text,
+    clean_and_normalize_text,
+)
+from app.worker.ai_tasks.disease_extractor import get_negative_entities
+from app.worker.ai_tasks.lab_extractor import extract_labs
 logger = CentralizedLogger.get_logger(__name__)
 
 @time_metrics()
-def run_ner_pipeline(file_content):
+def run_ner_pipeline(file_content, job_id):
     """
     Running NER pipeline
     """
+    job = Job.fetch(job_id, connection=redis_conn)
+
     try:
 
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            temp_file.write(file_content)
+            temp_path = temp_file.name
+
+        # Extraction
         logger.info("Starting extraction...")
-        extracted_text = extract_text_from_pdf(file_content)
+        update_status('Extracting Text from document', job)
+        extracted_text = extract_text_from_pdf(temp_path)
+
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
         logger.info("Extracted text...")
-        chunked_text = chunk_text(extracted_text)
 
+        # Chunking
+        update_status('Chunking Text', job)
+        chunked_text = chunk_text(extracted_text)
         logger.info("Chunked text...")
+
+        # Cleaning the chunks
+        update_status('Cleaning the Chunks', job)
         cleaned_text = clean_and_normalize_text(chunked_text)
 
+        cleaned_text_strings = [
+            doc.page_content
+            for doc in cleaned_text
+            if doc.page_content.strip()
+        ]
+
         logger.info("Cleaned text...")
-        vector_store = embed_chunks_and_store_in_vector_db(cleaned_text)
+        # vector_store = embed_chunks_and_store_in_vector_db(cleaned_text)
 
-        
+        # Extracting diseases
+        update_status('Extracting diseases', job)
+        logger.info("Getting the diseases")
+        diseases = get_negative_entities(cleaned_text_strings)
 
-        retriever = vector_store.as_retriever(search_kwargs={"k" : 4})
+        # Extracting lab results
+        update_status('Extracting lab results', job)
+        logger.info("Extracting Lab results")
+        lab_results = extract_labs(cleaned_text)
 
-        return vector_store, retriever, cleaned_text
+        # retriever = vector_store.as_retriever(search_kwargs={"k" : 4})
 
+        # return vector_store, retriever, cleaned_text
 
-        # result = {
-        #     "extracted_text":"Hello There its the dummy NER pipeline",
-        #     "diseases_json": {
-        #         "cancer": 0.98
-        #     },
-        #     "labs_json": {
-        #         "glucose(mg/l)": 300
-        #     },
-        #     "summary_text": "The patient has cancer with a glucose level of 300 mg/l"
-        # }
+        result = {
+            "extracted_text": extracted_text,
+            "diseases_json": diseases,
+            "labs_json": lab_results,
+            "summary_text": "The patient has cancer with a glucose level of 300 mg/l",
+        }
 
-        # if len(result) == 0:
-        #     logger.error(f"Empty result")
-        #     return {
-        #         "error":"Empty result"
-        #     }
+        update_status('Completed')
 
-        # return result
+        if len(result) == 0:
+            logger.error(f"Empty result")
+            return {"error": "Empty result"}
+
+        return result
     except Exception as e:
+        update_status("Failed", job)
         logger.error(f"AI pipeline processing failed{e}")
         raise
 
-from pathlib import Path
-file = Path("samplePmedReport.pdf")
+def update_status(status_text, job):
+    """Updates the Redis job meta so the frontend can see it"""
+    job.meta['status'] = status_text
+    job.save_meta()
+    logger.info(f"Job {job.id} status: {status_text}")
 
-vector_store, retriever = run_ner_pipeline(file)
+# from pathlib import Path
+# file = Path("samplePmedReport.pdf")
 
-query = "return whole document"
+# vector_store, retriever = run_ner_pipeline(file)
 
-relevant_docs = retriever.invoke(query)
+# query = "return whole document"
 
-for i in range(len(relevant_docs)):
-    print(relevant_docs[i])
+# relevant_docs = retriever.invoke(query)
+
+# for i in range(len(relevant_docs)):
+#     print(relevant_docs[i])

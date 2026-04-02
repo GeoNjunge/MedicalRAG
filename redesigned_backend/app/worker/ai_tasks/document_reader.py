@@ -14,7 +14,7 @@ from app.core.logger_setup import logger, CentralizedLogger, time_metrics
 logger = CentralizedLogger.get_logger(__name__)
 # model_name = "dmis-lab/biobert-base-cased-v1.1"
 model_name = "sentence-transformers/all-MiniLM-L6-v2"
-embeddings = HuggingFaceEmbeddings(model_name=model_name)
+embeddings = HuggingFaceEmbeddings(model_name=model_name, cache_folder="cached_models")
 
 @time_metrics()
 def extract_text_from_pdf(file) -> str:
@@ -97,16 +97,16 @@ def embed_chunks_and_store_in_vector_db(all_splits):
 
     return vectorstore
 
-file_path = Path("samplePmedReport.pdf")
+# file_path = Path("samplePmedReport.pdf")
 
-markdown = extract_text_from_pdf(file_path)
-chunks = chunk_text(markdown)
+# markdown = extract_text_from_pdf(file_path)
+# chunks = chunk_text(markdown)
 
-# Path("discharge_sum.md").write_text(markdown)
+# # Path("discharge_sum.md").write_text(markdown)
 
-for split in range(len(chunks)):
-    # print(f"chunk {split}\n {chunks[split]}")
-    content = chunks[split].page_content
-    negative_esnts = get_negative_entities(content)
-    print(negative_esnts)
+# for split in range(len(chunks)):
+#     # print(f"chunk {split}\n {chunks[split]}")
+#     content = chunks[split].page_content
+#     negative_esnts = get_negative_entities(content)
+#     print(negative_esnts)
 

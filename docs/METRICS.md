@@ -11,8 +11,8 @@
 
 | Method                 | Latency | Notes                                                                      | Decision   |
 | ---------------------- | ------- | -------------------------------------------------------------------------- | ---------- |
-| **BioBERT Semantic**   | 53s     | High accuracy, but latency too high (not practical)                        | ❌ Not used |
-| **Recursive Splitter** | 0.001s  | Extremely fast, but lacks semantic understanding (risk for medical nuance) | ❌ Not used |
+| **BioBERT Semantic**   | 53s     | High accuracy, but latency too high (not practical)                        | Not used |
+| **Recursive Splitter** | 0.001s  | Extremly fast, but lacks semantic understanding (risk for medical nuance) | Not used |
 | **Mini-LM + Semantic**   | 3.9s    | Balanced between speed and semantic understanding                          | ✅ Chosen   |
 
 ---

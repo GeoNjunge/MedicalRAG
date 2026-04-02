@@ -92,7 +92,7 @@ def process_ai_job(job_id: str):
         file_content = read_from_s3_into_memory(obj_key)
 
         # Run AI pipeline -- later
-        result = run_ner_pipeline(file_content) # dummy ner_pipeline
+        result = run_ner_pipeline(file_content, job_id) # dummy ner_pipeline
 
         if "error" in result:
             job.error_message = result["error"]

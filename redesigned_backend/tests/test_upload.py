@@ -1,4 +1,4 @@
-from app.tests.conftest import mock_s3, client
+from tests.conftest import mock_s3, client
 import pytest
 from io import BytesIO
 
