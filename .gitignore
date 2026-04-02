@@ -20,7 +20,6 @@ template/
 *.ckpt
 *.log
 *.csv
-*.json
 *.xlsx
 *.zip
 *.tar.gz
