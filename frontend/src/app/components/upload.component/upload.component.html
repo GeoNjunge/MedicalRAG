@@ -1,0 +1,250 @@
+<div class="page-wrapper">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">
+        <span class="title-med">Med</span><span class="title-nlp">NLP</span>
+        <span class="title-tag">Medical Intelligence</span>
+      </h1>
+      <p class="page-subtitle">Upload a clinical document and receive structured AI-powered insights</p>
+    </div>
+    <div class="header-badge">
+      <span class="badge-dot"></span>
+      <span>NLP Engine Active</span>
+    </div>
+  </div>
+  <!-- Upload Zone -->
+  <div class="section" *ngIf="phase() === 'idle' || phase() === 'uploading'">
+    <div
+      class="upload-zone"
+      [class.dragover]="isDragging"
+      [class.uploading]="phase() === 'uploading'"
+      (dragover)="onDragOver($event)"
+      (dragleave)="isDragging = false"
+      (drop)="onDrop($event)"
+      (click)="fileInput.click()"
+    >
+      <input #fileInput type="file" accept=".pdf,.txt,.docx" hidden (change)="onFileSelected($event)"/>
+      <div class="upload-content" *ngIf="phase() === 'idle'">
+        <div class="upload-icon-ring">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d4622a" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+        </div>
+        <div class="upload-text-group">
+          <span class="upload-main-text" *ngIf="!selectedFile">Drop clinical document here</span>
+          <span class="upload-main-text file-selected" *ngIf="selectedFile">{{ selectedFile.name }}</span>
+          <span class="upload-sub-text" *ngIf="!selectedFile">PDF, DOCX, or TXT — clinical notes, lab reports, discharge summaries</span>
+          <span class="upload-sub-text" *ngIf="selectedFile">{{ (selectedFile.size / 1024).toFixed(1) }} KB · Click to change file</span>
+        </div>
+      </div>
+      <div class="upload-content" *ngIf="phase() === 'uploading'">
+        <div class="spinner-ring"></div>
+        <span class="upload-main-text">Uploading document...</span>
+      </div>
+    </div>
+    <button
+      class="btn-primary"
+      [disabled]="!selectedFile || phase() === 'uploading'"
+      (click)="uploadDocument()"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+        <path d="M5 19h14"/>
+      </svg>
+      {{ phase() === 'uploading' ? 'Uploading...' : 'Analyze Document' }}
+    </button>
+    <div class="error-banner" *ngIf="errorMessage()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      {{ errorMessage() }}
+    </div>
+  </div>
+  <!-- Processing Phase -->
+  <div class="section processing-section" *ngIf="phase() === 'processing'">
+    <div class="processing-card">
+      <div class="processing-header">
+        <div class="pulse-ring">
+          <div class="pulse-core"></div>
+        </div>
+        <div>
+          <div class="processing-label">Processing Document</div>
+          <div class="processing-id">Job ID: <code>{{ jobId() }}</code></div>
+        </div>
+      </div>
+      <div class="status-timeline">
+        <div class="timeline-item active">
+          <div class="tl-dot done"></div>
+          <span>Document uploaded</span>
+        </div>
+        <div class="timeline-item active">
+          <div class="tl-dot spinning"></div>
+          <span class="status-live">{{ currentStatus() || 'Initializing pipeline...' }}</span>
+        </div>
+        <div class="timeline-item muted">
+          <div class="tl-dot pending"></div>
+          <span>Results ready</span>
+        </div>
+      </div>
+      <div class="poll-note">Polling every 2s · <span class="poll-count">{{ pollCount() }} checks</span></div>
+    </div>
+  </div>
+  <!-- Results Phase -->
+  <div class="results-area" *ngIf="phase() === 'done' && result()">
+    <div class="results-header">
+      <div class="results-title-row">
+        <div class="result-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Analysis Complete
+        </div>
+        <div class="result-actions">
+          <button class="btn-ghost" (click)="openChat()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+            Chat about results
+          </button>
+          <button class="btn-ghost" (click)="reset()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+            </svg>
+            New document
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Summary Card -->
+    <div class="result-card summary-card">
+      <div class="card-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d4622a" stroke-width="2">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        Clinical Summary
+      </div>
+      <p class="summary-text">{{ result()!.summary_text }}</p>
+    </div>
+    <div class="results-grid">
+      <!-- Diseases Card -->
+      <div class="result-card">
+        <div class="card-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e8724a" stroke-width="2">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          Identified Conditions
+          <span class="count-badge">{{ result()!.diseases_json?.length || 0 }}</span>
+        </div>
+        <div class="entity-list" *ngIf="result()!.diseases_json?.length">
+          <div class="entity-row" *ngFor="let d of result()!.diseases_json">
+            <div class="entity-pill disease">
+              {{ d.name || d.disease || d.condition || (isString(d) ? d : (d | json)) }}
+            </div>
+            <div class="entity-meta" *ngIf="d.confidence">
+              <div class="confidence-bar">
+                <div class="confidence-fill" [style.width]="(d.confidence * 100) + '%'"></div>
+              </div>
+              <span class="conf-value">{{ (d.confidence * 100).toFixed(0) }}%</span>
+            </div>
+            <span class="entity-type" *ngIf="d.icd_code">{{ d.icd_code }}</span>
+          </div>
+        </div>
+        <div class="empty-state" *ngIf="!result()!.diseases_json?.length">No conditions identified</div>
+      </div>
+      <!-- Labs Card -->
+      <div class="result-card">
+        <div class="card-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c9ef5" stroke-width="2">
+            <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v11m0 0l-3 7h12l-3-7M9 14h6"/>
+          </svg>
+          Lab Results
+          <span class="count-badge blue">{{ result()!.labs_json?.length || 0 }}</span>
+        </div>
+        <div class="labs-table" *ngIf="result()!.labs_json?.length">
+          <div class="lab-row" *ngFor="let lab of result()!.labs_json">
+            <div class="lab-name">{{ lab.name || lab.test || lab.lab || (isString(lab) ? lab : '') }}</div>
+            <div class="lab-right">
+              <span class="lab-value" [class.abnormal]="lab.flag === 'H' || lab.flag === 'L' || lab.abnormal">
+                {{ lab.value || lab.result || '—' }}
+                <span class="lab-unit" *ngIf="lab.unit">{{ lab.unit }}</span>
+              </span>
+              <span class="lab-flag" *ngIf="lab.flag" [class.high]="lab.flag === 'H'" [class.low]="lab.flag === 'L'">
+                {{ lab.flag }}
+              </span>
+            </div>
+            <span class="lab-range" *ngIf="lab.reference_range">Ref: {{ lab.reference_range }}</span>
+          </div>
+        </div>
+        <div class="empty-state" *ngIf="!result()!.labs_json?.length">No lab values extracted</div>
+      </div>
+    </div>
+  </div>
+  <!-- ═══════════ CHAT MODAL ═══════════ -->
+  <div class="modal-backdrop" [class.visible]="chatOpen()" (click)="closeChat($event)">
+    <div class="chat-modal" (click)="$event.stopPropagation()">
+      <div class="chat-modal-header">
+        <div class="chat-title-row">
+          <span class="chat-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4622a" stroke-width="2">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+          </span>
+          <div>
+            <div class="chat-title">Ask about your results</div>
+            <div class="chat-subtitle">MedNLP AI · Context-aware</div>
+          </div>
+        </div>
+        <button class="close-btn" (click)="chatOpen.set(false)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="chat-messages" #chatScroll>
+        <div class="chat-intro" *ngIf="chatMessages().length === 0">
+          <div class="intro-icon">⬡</div>
+          <p>I have full context of your medical document analysis. Ask me anything about the conditions, lab values, or clinical summary.</p>
+          <div class="suggestion-chips">
+            <button class="chip" (click)="sendSuggestion('Explain the identified conditions in simple terms')">Explain conditions</button>
+            <button class="chip" (click)="sendSuggestion('Which lab values are abnormal and what do they indicate?')">Abnormal labs</button>
+            <button class="chip" (click)="sendSuggestion('What are the next steps based on these findings?')">Next steps</button>
+          </div>
+        </div>
+        <div class="chat-bubble-wrap" *ngFor="let msg of chatMessages()" [class.user-wrap]="msg.role === 'user'">
+          <div class="chat-bubble" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+            <div class="bubble-content" [innerHTML]="formatMessage(msg.content)"></div>
+            <div class="bubble-time">{{ msg.timestamp | date:'HH:mm' }}</div>
+          </div>
+        </div>
+        <div class="typing-indicator" *ngIf="chatLoading()">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <textarea
+          #chatInput
+          class="chat-textarea"
+          [(ngModel)]="chatInputText"
+          placeholder="Ask about the clinical findings..."
+          rows="1"
+          (keydown.enter)="onChatEnter($event)"
+          (input)="autoResize($event)"
+        ></textarea>
+        <button class="send-btn" [disabled]="!chatInputText.trim() || chatLoading()" (click)="sendMessage()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

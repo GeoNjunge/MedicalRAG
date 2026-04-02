@@ -1,9 +1,9 @@
 import { Component, signal } from '@angular/core';
-import { UploadFormComponent } from "./Components/upload-form-component/upload-form-component";
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  imports: [UploadFormComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

@@ -1,0 +1,251 @@
+<div class="search-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">
+        <span class="title-med">Med</span><span class="title-nlp">NLP</span>
+        <span class="title-tag">Patient Records</span>
+      </h1>
+      <p class="page-subtitle">Search indexed medical documents via Elasticsearch</p>
+    </div>
+    <div class="es-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f0b429" stroke-width="2">
+        <ellipse cx="12" cy="5" rx="9" ry="3"/>
+        <path d="M21 12c0 1.66-4.03 3-9 3S3 13.66 3 12"/>
+        <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/>
+      </svg>
+      Elasticsearch
+    </div>
+  </div>
+  <!-- Search Controls -->
+  <div class="search-panel">
+    <div class="search-bar-wrap">
+      <div class="search-input-group">
+        <div class="search-icon-left">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5a5a6a" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+        </div>
+        <input
+          #searchInput
+          class="search-input"
+          type="text"
+          [(ngModel)]="patientId"
+          placeholder="Enter Patient ID (e.g. PT-20481)..."
+          (ngModelChange)="onSearchChange($event)"
+          (keydown.enter)="triggerSearch()"
+        />
+        <button class="clear-btn" *ngIf="patientId" (click)="clearSearch()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <button class="btn-search" (click)="triggerSearch()" [disabled]="loading()">
+        <svg *ngIf="!loading()" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <div *ngIf="loading()" class="spin-sm"></div>
+        Search Records
+      </button>
+    </div>
+    <!-- Filters Row -->
+    <div class="filters-row">
+      <div class="filter-group">
+        <label class="filter-label">Document Type</label>
+        <select class="filter-select" [(ngModel)]="filterDocType" (ngModelChange)="triggerSearch()">
+          <option value="">All types</option>
+          <option value="lab_report">Lab Report</option>
+          <option value="discharge_summary">Discharge Summary</option>
+          <option value="clinical_notes">Clinical Notes</option>
+          <option value="radiology">Radiology</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Sort by</label>
+        <select class="filter-select" [(ngModel)]="sortBy" (ngModelChange)="triggerSearch()">
+          <option value="relevance">Relevance</option>
+          <option value="date_desc">Newest first</option>
+          <option value="date_asc">Oldest first</option>
+          <option value="score">Match score</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Results per page</label>
+        <select class="filter-select" [(ngModel)]="pageSize" (ngModelChange)="triggerSearch()">
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <!-- Results Meta -->
+  <div class="results-meta" *ngIf="searchMeta()">
+    <span class="meta-count">
+      <strong>{{ searchMeta()!.total }}</strong> document{{ searchMeta()!.total !== 1 ? 's' : '' }} found
+    </span>
+    <span class="meta-time">in {{ searchMeta()!.took }}ms</span>
+    <div class="meta-query" *ngIf="lastQuery()">
+      Patient ID: <code>{{ lastQuery() }}</code>
+    </div>
+  </div>
+  <!-- Empty / Initial -->
+  <div class="empty-section" *ngIf="!loading() && !results().length && !hasSearched()">
+    <div class="empty-illustration">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#2a2a35" stroke-width="1">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="M21 21l-4.35-4.35"/>
+      </svg>
+    </div>
+    <p class="empty-title">Search patient records</p>
+    <p class="empty-sub">Enter a patient ID to retrieve all associated medical documents from the index.</p>
+    <div class="example-ids">
+      <span class="example-label">Try:</span>
+      <button class="example-chip" (click)="quickSearch('PT-10042')">PT-10042</button>
+      <button class="example-chip" (click)="quickSearch('PT-20481')">PT-20481</button>
+      <button class="example-chip" (click)="quickSearch('PT-38291')">PT-38291</button>
+    </div>
+  </div>
+  <div class="empty-section" *ngIf="!loading() && !results().length && hasSearched()">
+    <div class="empty-illustration">
+      <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#2a2a35" stroke-width="1">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="9" y1="15" x2="15" y2="15"/>
+      </svg>
+    </div>
+    <p class="empty-title">No records found</p>
+    <p class="empty-sub">No documents indexed for patient <code style="color:#d4622a">{{ lastQuery() }}</code>. Try a different ID or check the index.</p>
+  </div>
+  <!-- Results List -->
+  <div class="results-list" *ngIf="results().length">
+    <div
+      class="record-card"
+      *ngFor="let hit of results(); trackBy: trackById"
+      (click)="selectRecord(hit)"
+      [class.selected]="selectedRecord()?._id === hit._id"
+    >
+      <div class="card-left">
+        <div class="doc-type-icon" [class]="docTypeClass(hit._source.document_type)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="patient-info">
+            <span class="patient-id">{{ hit._source.patient_id }}</span>
+            <span class="patient-name" *ngIf="hit._source.patient_name">· {{ hit._source.patient_name }}</span>
+          </div>
+          <div class="card-meta-right">
+            <span class="doc-type-tag" [class]="docTypeClass(hit._source.document_type)">
+              {{ formatDocType(hit._source.document_type) }}
+            </span>
+            <span class="doc-date" *ngIf="hit._source.upload_date">
+              {{ hit._source.upload_date | date:'MMM d, yyyy' }}
+            </span>
+          </div>
+        </div>
+        <!-- Highlighted summary -->
+        <div
+          class="summary-snippet"
+          *ngIf="hit.highlight?.['summary_text']?.[0]"
+          [innerHTML]="hit.highlight!['summary_text']![0]"
+        ></div>
+        <div
+          class="summary-snippet plain"
+          *ngIf="!hit.highlight?.['summary_text'] && hit._source.summary_text"
+        >
+          {{ hit._source.summary_text | slice:0:200 }}...
+        </div>
+        <!-- Tags -->
+        <div class="tags-row" *ngIf="hit._source.diseases?.length">
+          <span class="tag disease" *ngFor="let d of hit._source.diseases?.slice(0, 4)">{{ d }}</span>
+          <span class="tag-more" *ngIf="(hit._source.diseases?.length ?? 0) > 4">
+            +{{ (hit._source.diseases?.length ?? 0) - 4 }} more
+          </span>
+        </div>
+        <div class="card-footer">
+          <span class="facility" *ngIf="hit._source.facility">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+            </svg>
+            {{ hit._source.facility }}
+          </span>
+          <span class="relevance-score">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#5a5a6a" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            Score: {{ hit._score.toFixed(3) }}
+          </span>
+        </div>
+      </div>
+    </div>
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages() > 1">
+      <button class="page-btn" [disabled]="currentPage() === 0" (click)="prevPage()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <span class="page-info">Page {{ currentPage() + 1 }} of {{ totalPages() }}</span>
+      <button class="page-btn" [disabled]="currentPage() === totalPages() - 1" (click)="nextPage()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <!-- Detail Panel -->
+  <div class="detail-panel" *ngIf="selectedRecord()" (click)="selectedRecord.set(null)">
+    <div class="detail-inner" (click)="$event.stopPropagation()">
+      <div class="detail-header">
+        <div>
+          <div class="detail-patient">{{ selectedRecord()!._source.patient_id }}
+            <span *ngIf="selectedRecord()!._source.patient_name"> · {{ selectedRecord()!._source.patient_name }}</span>
+          </div>
+          <div class="detail-doc-type">{{ formatDocType(selectedRecord()!._source.document_type) }}</div>
+        </div>
+        <button class="close-btn" (click)="selectedRecord.set(null)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="detail-body">
+        <div class="detail-section">
+          <div class="detail-section-label">Clinical Summary</div>
+          <p class="detail-summary">{{ selectedRecord()!._source.summary_text || 'No summary available.' }}</p>
+        </div>
+        <div class="detail-section" *ngIf="selectedRecord()!._source.diseases?.length">
+          <div class="detail-section-label">Conditions</div>
+          <div class="detail-tags">
+            <span class="tag disease" *ngFor="let d of selectedRecord()!._source.diseases">{{ d }}</span>
+          </div>
+        </div>
+        <div class="detail-section" *ngIf="selectedRecord()!._source.lab_values?.length">
+          <div class="detail-section-label">Lab Values</div>
+          <div class="detail-labs">
+            <div class="detail-lab-row" *ngFor="let lab of selectedRecord()!._source.lab_values">
+              <span class="lab-name">{{ lab.name || lab.test }}</span>
+              <span class="lab-val">{{ lab.value }} <small>{{ lab.unit }}</small></span>
+            </div>
+          </div>
+        </div>
+        <div class="detail-meta-row">
+          <span *ngIf="selectedRecord()!._source.upload_date">
+            📅 {{ selectedRecord()!._source.upload_date | date:'long' }}
+          </span>
+          <span *ngIf="selectedRecord()!._source.facility">
+            🏥 {{ selectedRecord()!._source.facility }}
+          </span>
+          <span>Doc ID: <code>{{ selectedRecord()!._id }}</code></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
