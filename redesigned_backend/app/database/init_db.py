@@ -9,7 +9,9 @@ def init_db():
     logger.info("Connecting to database to initialize tables...")
     try:
         # This will create tables if they don't exist
-        Base.metadata.create_all(bind=engine)
+        Base.metadata.create_all(
+            bind=engine
+        )
         
         # Confirmation check
         existing_tables = Base.metadata.tables.keys()

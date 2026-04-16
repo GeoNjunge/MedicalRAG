@@ -26,10 +26,10 @@ except ValueError as error:
 
 class Uploader():
     @staticmethod
-    async def get_s3_key(filename, patient_id):
+    def get_s3_key(filename, patient_id):
         try:
             new_id = uuid.uuid4()
-            key = f"patients/{patient_id}/jobs/{new_id}_{filename}"
+            key = f"patients_{patient_id}_jobs_{new_id}_{filename}"
             return key
         except RuntimeError as e:
             logger.error(f"Error getting s3 key: {e}")

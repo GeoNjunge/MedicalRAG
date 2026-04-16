@@ -19,6 +19,7 @@ class AppConfig(BaseSettings):
     AWS_ACCESS_KEY: str
     AWS_SECRET_KEY: str
     S3_REGION_NAME :str
+    OLLAMA_URL: str
 
     model_config = SettingsConfigDict(
           env_file='.env',

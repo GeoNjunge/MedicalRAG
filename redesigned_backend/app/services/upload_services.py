@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from fastapi import UploadFile
 from typing import Optional
 from app.services.file_validation import validator
@@ -6,25 +8,9 @@ from sqlalchemy.orm import Session
 from app.core.logger_setup import logger, CentralizedLogger
 from app.models.job import Job
 from app.queue.job_queue import queue
+from app.services.push_job_to_redis import push_job
 
 logger = CentralizedLogger.get_logger(__name__)
-
-
-def push_job(job_id):
-    try:
-        logger.info(f"--- ATTEMPTING REDIS ENQUEUE FOR {job_id} ---")
-        # Use the string path to avoid import errors
-        enqueued_job = queue.enqueue(
-            "app.worker.tasks.process_ai_job", 
-            args=(str(job_id),),
-            job_id=str(job_id)
-        )
-        logger.info(f"--- SUCCESS: Job {enqueued_job.id} is now in Redis ---")
-        return enqueued_job
-    except Exception as e:
-        logger.error(f"!!! REDIS ENQUEUE FAILED: {e} !!!")
-        raise
-
 
 async def upload_file(file: UploadFile,
         patient_id: str,
@@ -41,17 +27,27 @@ async def upload_file(file: UploadFile,
         file_hash = validator.compute_hash(file)
 
         # Upload to S3
-        result = await uploader.upload_file_to_s3(file, patient_id)
+        # result = await uploader.upload_file_to_s3(file, patient_id)
 
+        # Well change this to be save job to in memory 
+        # Well also need key for uniqueness
+        unique_key = uploader.get_s3_key(file.filename, patient_id)
+        file_path = Path(f"files/{unique_key}")
+
+        with open(file_path, 'wb') as buffer:
+            content = await file.read()
+            buffer.write(content)
+            
         # Job ORM object creation
         job = Job(
             patient_id=patient_id,
             input_type="pdf",
-            file_url=result["object_url"],
-            original_filename=result["filename"],
+            file_url="object_url",
+            original_filename=file.filename,
             priority=priority,
             model_version=model_version,
-            file_hash=file_hash
+            file_hash=file_hash,
+            file_path=str(file_path)
         )
 
         logger.info("Creating Job...")
@@ -69,7 +65,7 @@ async def upload_file(file: UploadFile,
         except Exception as e:
             logger.warning(f"Refresh failed but continuing: {e}")
         # Push job_id to queue
-        push_job(job.id)
+        push_job(job.id, job.file_path)
 
         # Return 
         return {"job_id": job.id, "job_status":job.status, "message":"Job Created Successfully"}

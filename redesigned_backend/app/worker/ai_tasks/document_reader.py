@@ -4,26 +4,36 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_huggingface import HuggingFaceEmbeddings
+from transformers import AutoModel
+from sentence_transformers import SentenceTransformer
 from langchain_community.vectorstores import Chroma
+import os
+
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["HF_HUB_OFFLINE"] = "1"
+
 from docling.document_converter import DocumentConverter
-from datetime import datetime, timezone
-from app.worker.ai_tasks.disease_extractor import extract_diseases, get_negative_entities
 
 from app.core.logger_setup import logger, CentralizedLogger, time_metrics
 
 logger = CentralizedLogger.get_logger(__name__)
+
+# Docling doc converter
+converter = DocumentConverter()
+
+# Embedding model
 # model_name = "dmis-lab/biobert-base-cased-v1.1"
-model_name = "sentence-transformers/all-MiniLM-L6-v2"
+model_name = "cached_models/models--sentence-transformers--all-MiniLM-L6-v2/snapshots/c9745ed1d9f207416be6d2e6f8de32d1f16199bf"
 embeddings = HuggingFaceEmbeddings(model_name=model_name, cache_folder="cached_models")
 
 @time_metrics()
 def extract_text_from_pdf(file) -> str:
     """
-    Extracts text from PDF bytes using PyMuPDF
+    Extracts text from PDF using Docling with rapidOCR
     """
 
     try:
-       converter = DocumentConverter()
        doc = converter.convert(file).document
        mark_doc = doc.export_to_markdown()
        
@@ -35,23 +45,24 @@ def extract_text_from_pdf(file) -> str:
 
 @time_metrics()
 def chunk_text(markdown_file):
-    # headers_to_split_on = [
-    # ("##", "Header 2")]
+    headers_to_split_on = [
+    ("##", "Header 2")]
     # markdown header splitter
-    # splitter = MarkdownHeaderTextSplitter(
-    #    headers_to_split_on=headers_to_split_on,
-    #     strip_headers=False
-    # )
-    # markdown header splitter
-    # all_splits = splitter.split_text(markdown_file)
-
-    splitter = SemanticChunker(
-        embeddings,
-        breakpoint_threshold_type="percentile",
-        breakpoint_threshold_amount=80
+    splitter = MarkdownHeaderTextSplitter(
+       headers_to_split_on=headers_to_split_on,
+        strip_headers=False
     )
+    # markdown header splitter
+    all_splits = splitter.split_text(markdown_file)
 
-    all_splits = splitter.create_documents([markdown_file])
+    # Semantic chunker
+    # splitter = SemanticChunker(
+    #         embeddings,
+    #         breakpoint_threshold_type="percentile",
+    #         breakpoint_threshold_amount=80
+    # )
+
+    # all_splits = splitter.create_documents([markdown_file])
 
     # splitter = RecursiveCharacterTextSplitter(
     #    chunk_size=512,
@@ -97,16 +108,16 @@ def embed_chunks_and_store_in_vector_db(all_splits):
 
     return vectorstore
 
-# file_path = Path("samplePmedReport.pdf")
+file_path = Path("samplePmedReport.pdf")
 
 # markdown = extract_text_from_pdf(file_path)
 # chunks = chunk_text(markdown)
 
-# # Path("discharge_sum.md").write_text(markdown)
+# Path("discharge_sum.md").write_text(markdown)
 
 # for split in range(len(chunks)):
-#     # print(f"chunk {split}\n {chunks[split]}")
-#     content = chunks[split].page_content
-#     negative_esnts = get_negative_entities(content)
-#     print(negative_esnts)
+#     print(f"chunk {split}\n {chunks[split]}")
+    # content = chunks[split].page_content
+    # negative_esnts = get_negative_entities(content)
+    # print(negative_esnts)
 

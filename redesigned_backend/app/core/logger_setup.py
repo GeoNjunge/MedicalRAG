@@ -31,9 +31,17 @@ class CentralizedLogger:
             metrics_formatter = logging.Formatter('%(asctime)s | %(message)s')
             metrics_handler.setFormatter(metrics_formatter)
 
-            # A specific sub logger for metrics
+             # A specific sub logger for metrics
             metrics_logger = logging.getLogger("metrics")
             metrics_logger.setLevel(logging.INFO)
+
+            error_handler = logging.FileHandler("errors.log")
+            error_formatter = logging.Formatter('%(asctime)s | %(message)s')
+            error_handler.setFormatter(error_formatter)
+
+            # A specific sub logger for error
+            error_logger = logging.getLogger("errors")
+            error_logger.setLevel(logging.ERROR)
             
             if not metrics_logger.handlers:
                 metrics_logger.addHandler(metrics_handler)

@@ -9,78 +9,73 @@ from app.worker.ai_tasks.document_reader import chunk_text, clean_and_normalize_
 nlp = medspacy.load()
 target_matcher = nlp.get_pipe('medspacy_target_matcher')
 
+from spacy.matcher import PhraseMatcher
+from spacy.tokens import Span
+# Assuming TargetRule is a wrapper around PhraseMatcher/Matcher that acts like this:
+# target_matcher.add(name, [pattern])
+
+# --- Updated Clinical Rules (Optimized) ---
+# --- 1. Unified Lab Rules (Covers aliases, prefixes, and sub-table hacks) ---
+# --- 1. Unified Lab Rules (Corrected Syntax) ---
+# --- 1. Unified Lab Rules (Corrected Syntax) ---
 clinical_rules = [
- # --- Table Section Labs ---
-    TargetRule("Glucose", category="LAB", pattern=[{"LOWER": "glucose"}]),
-    TargetRule("Hemoglobin A1c", category="LAB", pattern=[{"LOWER": {"IN": ["hba1c", "a1c", "hemoglobin"]}}, {"LOWER": "a1c", "OP": "?"}]),
-    TargetRule("Creatinine", category="LAB", pattern=[{"LOWER": "creatinine"}]),
+    TargetRule("Glucose", category="LAB", 
+               pattern=[{"LOWER": "glucose"}, {"TEXT": ",", "OP": "?"}, {"LOWER": "fasting", "OP": "?"}]),
+    TargetRule("HbA1c", category="LAB", 
+               pattern=[{"LOWER": {"IN": ["hba1c", "a1c", "hb", "hemoglobin"]}}, {"LOWER": "a1c", "OP": "?"}]),
     TargetRule("Potassium", category="LAB", pattern=[{"LOWER": "potassium"}]),
+    TargetRule("Creatinine", category="LAB", pattern=[{"LOWER": "creatinine"}]),
     TargetRule("Sodium", category="LAB", pattern=[{"LOWER": "sodium"}]),
-    TargetRule("WBC Count", category="LAB", pattern=[{"LOWER": "wbc"}, {"LOWER": "count", "OP": "?"}]),
-    
-    # --- Metabolic Panel Section ---
-    TargetRule("Calcium", category="LAB", pattern=[{"LOWER": "calcium"}]),
     TargetRule("BUN", category="LAB", pattern=[{"LOWER": "bun"}]),
-    TargetRule("eGFR", category="LAB", pattern=[{"LOWER": "egfr"}]),
-    TargetRule("ALT", category="LAB", pattern=[{"LOWER": {"IN": ["alt", "sgpt", "alanine"]}}]),
+    TargetRule("Calcium", category="LAB", pattern=[{"LOWER": "calcium"}]),
     
-    # --- Lipid Profile Section ---
-    TargetRule("Total Cholesterol", category="LAB", pattern=[{"LOWER": "total"}, {"LOWER": "cholesterol"}]),
-    TargetRule("HDL", category="LAB", pattern=[{"LOWER": "hdl"}]),
-    TargetRule("LDL", category="LAB", pattern=[{"LOWER": "ldl"}]),
-    TargetRule("Triglycerides", category="LAB", pattern=[{"LOWER": "triglycerides"}])
+    # Corrected ALT: Using ORTH for specific punctuation
+    TargetRule("ALT", category="LAB", 
+               pattern=[{"LOWER": {"IN": ["alt", "sgpt"]}}, {"ORTH": "(", "OP": "?"}, {"LOWER": "sgpt", "OP": "?"}, {"ORTH": ")", "OP": "?"}]),
+    
+    TargetRule("WBC", category="LAB", pattern=[{"LOWER": "wbc"}, {"LOWER": "count", "OP": "?"}]),
+    TargetRule("HGB", category="LAB", pattern=[{"LOWER": {"IN": ["hgb", "hemoglobin"]}}]),
+    TargetRule("PLT", category="LAB", pattern=[{"LOWER": {"IN": ["plt", "platelets"]}}]),
+
+    # Corrected Lipids: Using ORTH for parentheses
+    TargetRule("Total Cholesterol", category="LAB", 
+               pattern=[{"TEXT": ">", "OP": "?"}, {"LOWER": {"IN": ["total", "total_chol", "total-chol"]}}, {"LOWER": "cholesterol", "OP": "?"}]),
+    
+    TargetRule("ALT", category="LAB", 
+               pattern=[{"LOWER": {"IN": ["alt", "sgpt"]}}, {"ORTH": "(", "OP": "?"}, {"LOWER": "sgpt", "OP": "?"}, {"ORTH": ")", "OP": "?"}]),
+
+    TargetRule("LDL", category="LAB", 
+               pattern=[{"TEXT": ">", "OP": "?"}, {"LOWER": "ldl"}, {"ORTH": "(", "OP": "?"}, {"LOWER": "calculated", "OP": "?"}, {"ORTH": ")", "OP": "?"}]),
+    
+    TargetRule("HDL", category="LAB", pattern=[{"TEXT": ">", "OP": "?"}, {"LOWER": "hdl"}])
 ]
 
-value_rule = TargetRule('VALUE', category='LAB_VALUE', 
-                        pattern=[{"TEXT": {"REGEX":  r"^[<>]?\d+(\.\d+)?$"}}])
+# --- 2. Smart Value Rule ---
+value_rule = TargetRule("VALUE", category="LAB_VALUE", 
+                        pattern=[{"TEXT": {"REGEX": r"^[<>]?\d+([.,]\d+)?$"}}])
 
+# --- 3. Optimized Units & Flags ---
 additional_rules = [
-    # TargetRule("mg/dL", category="UNIT", 
-            #    pattern=[{"LOWER": "mg"}, {"LOWER": "/"}, {"LOWER": "dl"}]),
-    # 
-    # Match "mmol/L" 
-    # TargetRule("mmol/L", category="UNIT", 
-            #    pattern=[{"LOWER": "mmol"}, {"LOWER": "/"}, {"LOWER": "l"}]),
-
-    # Match "mEq/L"
-    # TargetRule("mEq/L", category="UNIT", 
-            #    pattern=[{"LOWER": "meq"}, {"LOWER": "/"}, {"LOWER": "l"}]),
-
-    # Keep simple ones as single tokens
-    # TargetRule("%", category="UNIT", pattern=[{"LOWER": "%"}]),
-
-    # TargetRule("x10^3/uL", category="UNIT", 
-            #    pattern=[{"LOWER": "x10^3/ul"}]),
-
-    TargetRule("x10^3/uL", category="UNIT", 
-           pattern=[{"LOWER": "x10"},{"LOWER": "^"}, {"LOWER": "3"},{"LOWER": "/"}, {"LOWER": "ul"}]),
-
-    # Match "mg/dL" as three tokens: [mg, /, dl]
-    TargetRule("mg/dL", category="UNIT", 
-               pattern=[{"LOWER": "mg"}, {"LOWER": "/"}, {"LOWER": "dl"}]),
+    TargetRule("UNITS_FRACTIONAL", category="UNIT", 
+               pattern=[{"LOWER": {"IN": ["mg", "g", "mmol", "meq", "u", "k", "m"]}}, {"TEXT": "/"}, {"LOWER": {"IN": ["dl", "l", "ul", "mcl"]}}]),
     
-    TargetRule("U/L", category="UNIT", pattern=[{"LOWER": "u"}, {"LOWER": "/"}, {"LOWER": "l"}]),
+    TargetRule("UNITS_EXPONENT", category="UNIT", 
+               pattern=[{"LOWER": {"IN": ["x10", "10"]}}, {"TEXT": {"IN": ["^", "*"]}}, {"TEXT": "3"}, {"TEXT": "/"}, {"LOWER": {"IN": ["ul", "mcl"]}}]),
 
-    # Match "mmol/L" 
-    TargetRule("mmol/L", category="UNIT", 
-               pattern=[{"LOWER": "mmol"}, {"LOWER": "/"}, {"LOWER": "l"}]),
+    TargetRule("ML_MIN_SURFACE", category="UNIT", 
+               pattern=[{"LOWER": "ml"}, {"TEXT": "/"}, {"LOWER": "min"}, {"TEXT": "/"}, {"TEXT": {"REGEX": r"^\d\.\d+m2$"}}]),
 
-    # Match "mEq/L"
-    TargetRule("mEq/L", category="UNIT", 
-               pattern=[{"LOWER": "meq"}, {"LOWER": "/"}, {"LOWER": "l"}]),
+    TargetRule("%", category="UNIT", pattern=[{"TEXT": "%"}]),
 
-    # Keep simple ones as single tokens
-    TargetRule("%", category="UNIT", pattern=[{"LOWER": "%"}]),
-    
-    # Catch "H" specifically since it's a standalone flag in table
-    TargetRule("HIGH", category="FLAG", 
-               pattern=[{"LOWER": {"IN": ["h", "high", "abnormal", "!", "critical"]}}]),
+    TargetRule("STATUS_FLAG", category="FLAG", 
+               pattern=[{"LOWER": {"REGEX": r"^([!❗h|l]|high|low|abn|critical|borderline|hemolyzed|abnormal).*$"}}])
 ]
 
-
+# Assuming target_matcher is already initialized
 target_matcher.add(clinical_rules)
 target_matcher.add(value_rule)
 target_matcher.add(additional_rules)
+
 
 @time_metrics()
 def extract_labs(chunks):
@@ -135,14 +130,18 @@ def extract_labs(chunks):
         logger.error(f"Error extracting labs: {e}")
         raise
 
-# file = Path("lab_report.md")
-# 
+# Test script
+# file = Path("lab_report.pdf")
+
 # text = extract_text_from_pdf(file)
-# 
-# chunks = chunk_text(text)
-# 
+
+# with open(file, 'r') as open_file:
+#     chunks = chunk_text(open_file.read())
+
+# open_file.close()
+
 # clean_text = clean_and_normalize_text(chunks)
-# 
+
 # print(extract_labs(clean_text))
 # for result in extract_labs(clean_text):
-    # print(f"Test: {result['test']} | Result: {result['value']} {result['unit']} | Status: {result['status']}")
+#     print(f"Test: {result['test']} | Result: {result['value']} {result['unit']} | Status: {result['status']}")

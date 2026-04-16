@@ -63,7 +63,7 @@ def read_from_s3_into_memory(input_str):
 
 
 
-def process_ai_job(job_id: str):
+def process_ai_job(job_id: str, file_path: str):
     """
     Background worker to process the job
     """
@@ -87,12 +87,16 @@ def process_ai_job(job_id: str):
         # Download S3 image
 
         # Get s3
-        obj_key = job.file_url
+        # obj_key = job.file_url
 
-        file_content = read_from_s3_into_memory(obj_key)
+        # file_content = read_from_s3_into_memory(obj_key)
 
+        # Get file from memory
         # Run AI pipeline -- later
-        result = run_ner_pipeline(file_content, job_id) # dummy ner_pipeline
+        with open(job.file_path, 'rb') as f:
+            file_bytes = f.read()
+
+        result = run_ner_pipeline(file_bytes, job_id, job.original_filename) # dummy ner_pipeline
 
         if "error" in result:
             job.error_message = result["error"]

@@ -16,9 +16,10 @@ class Job(Base):
 
     # Input metadata
     input_type: Mapped[str] = mapped_column(String, nullable=False)
-    file_url: Mapped[str] = mapped_column(String, nullable=False)
+    file_url: Mapped[str] = mapped_column(String, nullable=True)
     original_filename: Mapped[str] = mapped_column(String, nullable=True)
     file_hash: Mapped[str] = mapped_column(String, nullable=True)
+    file_path: Mapped[str] = mapped_column(String, nullable=True, unique=True)
 
     # State management
     status: Mapped[str] = mapped_column(String, default="pending", index=True)
@@ -48,5 +49,5 @@ class Job(Base):
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)
+        DateTime, default= lambda: datetime.now(timezone.utc), onupdate= lambda: datetime.now(timezone.utc)
     )
