@@ -1,10 +1,10 @@
-﻿# 🧠 Medical RAG – Hospital Document Ingestion & Automation System
+﻿# Medical RAG – Hospital Document Ingestion & Automation System
 
 **Backend system for automating hospital medical document processing, extracting structured insights from unstructured records, and enabling scalable AI-assisted workflows.**
 
 ---
 
-## 🚀 Overview
+## Overview
 
 Medical RAG is designed to **digitize and automate hospitals’ paper-heavy workflows**, enabling:
 
@@ -17,7 +17,7 @@ The platform emphasizes **automation, scalability, and reliability**, rather tha
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 Modular, production-oriented backend:
 
@@ -47,11 +47,11 @@ redesigned_backend/
 * Clear separation of concerns between routes, services, and data layer
 * Integration-ready with hospital IT and document workflows
 
-📄 Full architecture: `/docs/ARCHITECTURE.md`
+ Full architecture: `/docs/ARCHITECTURE.md`
 
 ---
 
-## 🧠 AI Document Ingestion Pipeline
+## AI Document Ingestion Pipeline
 
 1. Hospitals upload scanned or digital documents
 2. Text extraction & preprocessing (OCR via Docling)
@@ -66,11 +66,11 @@ redesigned_backend/
 * Async processing via Redis RQ for bulk ingestion
 * Modular design for future integration with additional AI models
 
-📄 Pipeline decisions: `/docs/MLDECISONS.md`
+ Pipeline decisions: `/docs/MLDECISONS.md`
 
 ---
 
-## ⚙️ Backend System
+## Backend System
 
 * **FastAPI REST APIs** for ingestion, processing, and querying
 * **PostgreSQL** for scalable storage of jobs and structured medical data
@@ -80,17 +80,17 @@ redesigned_backend/
 
 ---
 
-## ⚡ Performance & Metrics
+## Performance & Metrics
 
 * Optimized for **throughput and latency** in bulk document ingestion
 * Benchmarked semantic chunking, embeddings, and processing times
 * System designed for **scalable multi-hospital deployment**
-
-📄 Full metrics: `/docs/METRICS.md`
+  
+ Full metrics: `/docs/METRICS.md`
 
 ---
 
-## 🔐 Security
+## Security
 
 * JWT-based authentication and role-based access
 * Password hashing (bcrypt)
@@ -98,17 +98,17 @@ redesigned_backend/
 
 ---
 
-## 🌐 Frontend
+## Frontend
 
 * Angular frontend (in progress)
 * Communicates with backend via REST APIs
 * Located in `/frontend`
 
-📄 Frontend README: `/frontend/README.md`
+ Frontend README: `/frontend/README.md`
 
 ---
 
-## 🧪 Running Locally
+## Running Locally
 
 ```bash
 git clone <repo>
@@ -133,7 +133,7 @@ AWS_SECRET_KEY=your_aws_secret_key_here
 
 ---
 
-## ⚠️ Current Status
+## Current Status
 
 * Backend ingestion pipeline fully implemented
 * Frontend development ongoing

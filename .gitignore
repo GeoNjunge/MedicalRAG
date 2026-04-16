@@ -37,3 +37,6 @@ template/
 *.swo
 *.DS_Store
 *.pdf
+node_modules/
+dist/
+.angular/

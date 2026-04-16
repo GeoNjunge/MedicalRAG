@@ -1,0 +1,26 @@
+<div class="max-w-7xl mx-auto px-6 py-10">
+
+  <!-- Page header -->
+  <div class="mb-8">
+    <h1 class="font-[Syne] text-[32px] font-bold tracking-tight m-0 mb-2">
+      Patient Record
+      <span style="background:linear-gradient(135deg,#ff8c52,#ffb347);
+                   -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+                   background-clip:text;">Search</span>
+    </h1>
+    <p style="color:#8b909e;" class="text-[15px] m-0">
+      Full-text search across indexed medical documents via Elasticsearch.
+    </p>
+  </div>
+
+  <!-- Search bar -->
+  <app-search-bar (search)="onSearch($event)" class="block mb-[22px]"></app-search-bar>
+
+  <!-- Results area -->
+  <app-search-results
+    [state]="state()"
+    [results]="results()"
+    [query]="lastQuery()">
+  </app-search-results>
+
+</div>

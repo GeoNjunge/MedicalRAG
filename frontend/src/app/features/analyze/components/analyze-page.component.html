@@ -1,0 +1,85 @@
+<div class="max-w-7xl mx-auto px-6 py-10">
+
+  <!-- Page header -->
+  <div class="mb-9">
+    <h1 class="font-[Syne] text-[34px] font-bold tracking-tight m-0 mb-2">
+      Medical Document
+      <span style="background:linear-gradient(135deg,#ff8c52,#ffb347);
+                   -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+                   background-clip:text;">Intelligence</span>
+    </h1>
+    <p style="color:#8b909e;" class="text-[15px] m-0">
+      Upload clinical notes, lab reports, or discharge summaries for AI-powered NLP analysis.
+    </p>
+  </div>
+
+  <!-- Two-column layout -->
+  <div class="grid gap-[22px]" style="grid-template-columns:400px 1fr; align-items:start;">
+
+    <!-- LEFT: Upload + Job Status -->
+    <div class="flex flex-col gap-4">
+
+      <app-upload-panel
+        (fileSelected)="onFileSelected($event)"
+        (patientIdChange)="patientId.set($event)"
+        (docTypeChange)="docType.set($event)"
+        (upload)="startUpload()"
+        [disabled]="uploading()">
+      </app-upload-panel>
+
+      @if (jobId()) {
+        <app-job-status
+          [jobId]="jobId()!"
+          [steps]="steps()"
+          [pollCount]="pollCount()"
+          [done]="pollDone()">
+        </app-job-status>
+      }
+    </div>
+
+    <!-- RIGHT: Results -->
+    <div class="flex flex-col gap-4">
+
+      @if (!results()) {
+        <!-- Empty state -->
+        <div
+          style="background:#16181d; border:1px solid #2a2e38;"
+          class="rounded-2xl px-8 py-[72px] text-center">
+          <div
+            style="background:rgba(232,112,58,0.06);"
+            class="w-16 h-16 rounded-[18px] flex items-center justify-center mx-auto mb-4">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none"
+                 stroke="#555b6b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0
+                       012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0
+                       01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <p class="font-[Syne] text-[17px] font-bold m-0 mb-2" style="color:#8b909e;">
+            Awaiting Analysis
+          </p>
+          <p style="color:#555b6b;" class="text-[13px] m-0 leading-[1.7] max-w-[320px] mx-auto">
+            Upload a medical document on the left to view AI-extracted diseases,
+            laboratory values, and a clinical summary.
+          </p>
+        </div>
+      }
+
+      @if (results()) {
+        <app-results-summary
+          [summaryText]="results()!.summary_text"
+          (openChat)="openChat()">
+        </app-results-summary>
+
+        <app-results-diseases
+          [diseases]="results()!.diseases_json">
+        </app-results-diseases>
+
+        <app-results-labs
+          [labs]="results()!.labs_json">
+        </app-results-labs>
+      }
+
+    </div>
+  </div>
+</div>

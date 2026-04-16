@@ -1,9 +1,18 @@
 import { Routes } from '@angular/router';
-import { UploadComponent } from './components/upload.component/upload.component';
-import { SearchComponent } from './components/search.component/search.component';
 
 export const routes: Routes = [
-    { path: '', redirectTo: 'upload', pathMatch: 'full' },
-    { path: 'upload', component: UploadComponent },
-    { path: 'search', component: SearchComponent },
+  { path: '',        redirectTo: 'analyze', pathMatch: 'full' },
+  {
+    path: 'analyze',
+    loadComponent: () =>
+      import('./features/analyze/components/analyze-page.component')
+        .then(m => m.AnalyzePageComponent),
+  },
+  {
+    path: 'search',
+    loadComponent: () =>
+      import('./features/search/components/search-page.component')
+        .then(m => m.SearchPageComponent),
+  },
+  { path: '**', redirectTo: 'analyze' },
 ];

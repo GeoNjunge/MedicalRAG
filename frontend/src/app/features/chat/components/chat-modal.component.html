@@ -1,0 +1,179 @@
+<!-- Overlay -->
+@if (chat.isOpen()) {
+<div
+  class="fixed inset-0 z-50 flex items-end justify-end p-6"
+  style="background:rgba(0,0,0,0.7); backdrop-filter:blur(6px);"
+  (click)="chat.close()">
+
+  <!-- Panel -->
+  <div
+    class="flex flex-col overflow-hidden rounded-[20px] w-[430px] h-[610px]"
+    style="background:#16181d; border:1px solid #3a3f4d;
+           box-shadow:0 32px 80px rgba(0,0,0,0.7), 0 0 24px rgba(232,112,58,0.15);"
+    (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div
+      class="flex items-center gap-2.5 px-5 py-4 border-b"
+      style="background:#1c1f26; border-color:#2a2e38;">
+
+      <div
+        style="background:linear-gradient(135deg,#c45e2a,#e8703a);"
+        class="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83
+                   2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+      </div>
+
+      <div>
+        <p style="color:#e8eaf0;" class="font-[Syne] text-[14px] font-bold m-0 tracking-wide">
+          MedNLP Assistant
+        </p>
+        <p class="text-[11px] m-0 flex items-center gap-1.5" style="color:#3ecf8e;">
+          <span style="background:#3ecf8e;" class="w-1.5 h-1.5 rounded-full inline-block"></span>
+          Context-aware of current results
+        </p>
+      </div>
+
+      <div class="ml-auto flex gap-1.5">
+        <!-- Clear -->
+        <button
+          (click)="chat.clear()"
+          title="Clear chat"
+          style="background:transparent; border:1px solid #2a2e38;"
+          class="w-7 h-7 rounded-[7px] flex items-center justify-center cursor-pointer
+                 transition-all duration-200 hover:border-[#3a3f4d]">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+               stroke="#8b909e" stroke-width="2.5">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+          </svg>
+        </button>
+        <!-- Close -->
+        <button
+          (click)="chat.close()"
+          style="background:transparent; border:1px solid #2a2e38;"
+          class="w-7 h-7 rounded-[7px] flex items-center justify-center cursor-pointer
+                 transition-all duration-200 hover:border-[#f87171]">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+               stroke="#8b909e" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div #msgScroll class="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+      @for (msg of chat.messages(); track msg.id) {
+
+        <!-- AI message -->
+        @if (msg.role === 'ai') {
+          <div class="flex gap-2 items-start animate-[fadeIn_0.3s_ease_forwards]">
+            <div
+              style="background:linear-gradient(135deg,#c45e2a,#e8703a);"
+              class="w-[27px] h-[27px] rounded-[8px] flex items-center
+                     justify-center flex-shrink-0 mt-0.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                   stroke="white" stroke-width="2.5">
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </div>
+            <div
+              style="background:#22262f; border:1px solid #2a2e38;
+                     border-radius:18px 18px 18px 4px;"
+              class="px-4 py-3 max-w-[320px]">
+              @if (msg.typing) {
+                <!-- Typing dots -->
+                <div class="flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full inline-block animate-[blink_1.4s_0s_infinite]"
+                        style="background:#555b6b;"></span>
+                  <span class="w-1.5 h-1.5 rounded-full inline-block animate-[blink_1.4s_0.2s_infinite]"
+                        style="background:#555b6b;"></span>
+                  <span class="w-1.5 h-1.5 rounded-full inline-block animate-[blink_1.4s_0.4s_infinite]"
+                        style="background:#555b6b;"></span>
+                </div>
+              } @else {
+                <p style="color:#e8eaf0;" class="text-[13px] m-0 leading-[1.65]"
+                   [innerHTML]="msg.content"></p>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- User message -->
+        @if (msg.role === 'user') {
+          <div class="flex flex-row-reverse gap-2 items-start animate-[fadeIn_0.3s_ease_forwards]">
+            <div
+              style="background:#22262f; border:1px solid #2a2e38;"
+              class="w-[27px] h-[27px] rounded-[8px] flex items-center
+                     justify-center flex-shrink-0 mt-0.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                   stroke="#8b909e" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div
+              style="background:linear-gradient(135deg,#c45e2a,#e8703a);
+                     border-radius:18px 18px 4px 18px;"
+              class="px-4 py-3 max-w-[290px]">
+              <p class="text-[13px] text-white m-0 leading-[1.6]">{{ msg.content }}</p>
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Suggestion chips -->
+    <div class="px-3.5 pb-2 flex flex-wrap gap-1.5">
+      @for (s of suggestions; track s) {
+        <button
+          (click)="sendSuggestion(s)"
+          style="background:#0e0f11; border:1px solid #2a2e38; color:#555b6b;"
+          class="px-2.5 py-1 rounded-full text-[11px] cursor-pointer font-[DM_Sans]
+                 transition-all duration-200 whitespace-nowrap
+                 hover:border-[#e8703a] hover:text-[#e8703a]">
+          {{ s }}
+        </button>
+      }
+    </div>
+
+    <!-- Input bar -->
+    <div
+      class="flex gap-2 px-3.5 py-3 border-t"
+      style="background:#1c1f26; border-color:#2a2e38;">
+      <input
+        type="text"
+        [(ngModel)]="inputText"
+        (keydown)="onKeydown($event)"
+        placeholder="Ask about the results..."
+        style="background:#0e0f11; border:1px solid #2a2e38; color:#e8eaf0;"
+        class="flex-1 rounded-[10px] px-3.5 py-2.5 text-[13px] font-[DM_Sans]
+               transition-all duration-200
+               focus:outline-none focus:border-[#e8703a]
+               focus:shadow-[0_0_0_3px_rgba(232,112,58,0.1)]
+               placeholder:text-[#555b6b]" />
+      <button
+        (click)="send()"
+        style="background:linear-gradient(135deg,#c45e2a,#e8703a);"
+        class="w-10 h-10 rounded-[10px] flex items-center justify-center
+               flex-shrink-0 cursor-pointer border-none transition-all duration-200
+               hover:brightness-110 hover:-translate-y-px
+               hover:shadow-[0_4px_16px_rgba(232,112,58,0.3)]">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+}

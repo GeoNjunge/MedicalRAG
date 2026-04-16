@@ -1,18 +1,13 @@
-## 📝 Text Extraction
+### The Data Proof
+By instrumenting my functions with a `@time_metrics` decorator, I captured the exact impact of the refactor:
 
-| Method          | Notes                                                                 |
-| --------------- | --------------------------------------------------------------------- |
-| **Docling**     | Slow (~23s) but high semantic accuracy. Uses OCR for text extraction. |
-| **PyMuPDF4llm** | Will need to scale to non-pdf docs so not Multifaceted                |
 
----
+| Task | Before (Cold) | After (Global Init) | Speedup |
+| :--- | :--- | :--- | :--- |
+| PDF Extraction | 47.05s | 23.51s | **2.0x** |
+| Chunking | 10.20s | 4.20s | **2.4x** |
+| Disease NER | 14.68s | 5.81s | **2.5x** |
+| **Total Cycle** | **70.74s** | **33.99s** | **2.1x** |
 
-## 📦 Chunking / Semantic Splitting
-
-| Method                 | Latency | Notes                                                                      | Decision   |
-| ---------------------- | ------- | -------------------------------------------------------------------------- | ---------- |
-| **BioBERT Semantic**   | 53s     | High accuracy, but latency too high (not practical)                        | Not used |
-| **Recursive Splitter** | 0.001s  | Extremly fast, but lacks semantic understanding (risk for medical nuance) | Not used |
-| **Mini-LM + Semantic**   | 3.9s    | Balanced between speed and semantic understanding                          | ✅ Chosen   |
-
----
+### Key Insight for Junior Engineers
+Global variables are often discouraged in general web dev, but in **AI Engineering**, they are a critical tool for "Model Warming." If you aren't initializing your models outside your request/task handlers, you're burning money and latency.

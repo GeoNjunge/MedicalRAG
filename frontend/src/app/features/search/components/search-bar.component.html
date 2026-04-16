@@ -1,0 +1,123 @@
+<div style="background:#16181d; border:1px solid #2a2e38;" class="rounded-2xl p-6">
+
+  <!-- Input grid -->
+  <div class="grid gap-3 items-end"
+       style="grid-template-columns:1fr 180px 180px auto;">
+
+    <!-- Query input -->
+    <div>
+      <label style="color:#8b909e;" class="block text-[12px] font-medium mb-1.5">
+        Patient ID or Search Query
+      </label>
+      <div class="relative">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+             width="15" height="15" viewBox="0 0 24 24" fill="none"
+             stroke="#555b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          type="text"
+          [(ngModel)]="query"
+          (keydown)="onKeydown($event)"
+          placeholder="PAT-00482 or 'diabetes mellitus'..."
+          style="background:#0e0f11; border:1px solid #2a2e38; color:#e8eaf0;"
+          class="w-full rounded-lg pl-9 pr-3 py-2.5 font-mono text-[13px]
+                 transition-all duration-200
+                 focus:outline-none focus:border-[#e8703a]
+                 focus:shadow-[0_0_0_3px_rgba(232,112,58,0.1)]
+                 placeholder:text-[#555b6b]" />
+      </div>
+    </div>
+
+    <!-- Document type -->
+    <div>
+      <label style="color:#8b909e;" class="block text-[12px] font-medium mb-1.5">
+        Document Type
+      </label>
+      <div class="relative">
+        <select
+          [(ngModel)]="docType"
+          style="background:#0e0f11; border:1px solid #2a2e38; color:#e8eaf0; appearance:none;"
+          class="w-full rounded-lg px-3 py-2.5 text-[13px] font-[DM_Sans]
+                 cursor-pointer transition-all duration-200
+                 focus:outline-none focus:border-[#e8703a]">
+          <option value="">All Types</option>
+          <option value="clinical">Clinical Notes</option>
+          <option value="lab">Lab Reports</option>
+          <option value="discharge">Discharge Summary</option>
+        </select>
+        <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+             width="11" height="11" viewBox="0 0 24 24" fill="none"
+             stroke="#555b6b" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Date range -->
+    <div>
+      <label style="color:#8b909e;" class="block text-[12px] font-medium mb-1.5">
+        Date Range
+      </label>
+      <div class="relative">
+        <select
+          [(ngModel)]="dateRange"
+          style="background:#0e0f11; border:1px solid #2a2e38; color:#e8eaf0; appearance:none;"
+          class="w-full rounded-lg px-3 py-2.5 text-[13px] font-[DM_Sans]
+                 cursor-pointer transition-all duration-200
+                 focus:outline-none focus:border-[#e8703a]">
+          <option value="all">All Time</option>
+          <option value="7d">Last 7 Days</option>
+          <option value="30d">Last 30 Days</option>
+          <option value="90d">Last 90 Days</option>
+          <option value="1y">Last Year</option>
+        </select>
+        <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+             width="11" height="11" viewBox="0 0 24 24" fill="none"
+             stroke="#555b6b" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Search button -->
+    <div class="pt-[18px]">
+      <button
+        (click)="emit()"
+        style="background:linear-gradient(135deg,#c45e2a,#e8703a);"
+        class="px-[18px] py-2.5 rounded-lg font-[Syne] text-[13px] font-bold
+               text-white border-none whitespace-nowrap flex items-center gap-1.5
+               cursor-pointer transition-all duration-200
+               hover:brightness-110 hover:-translate-y-px
+               hover:shadow-[0_4px_16px_rgba(232,112,58,0.3)]">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        Search
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Quick filters -->
+  <div class="flex items-center gap-2 mt-3.5 pt-3.5 flex-wrap"
+       style="border-top:1px solid #2a2e38;">
+    <span style="color:#555b6b;" class="text-[11px] font-semibold flex-shrink-0">
+      Quick filters:
+    </span>
+    @for (f of quickFilters; track f) {
+      <button
+        (click)="quickSearch(f)"
+        style="background:#0e0f11; border:1px solid #2a2e38; color:#8b909e;"
+        class="px-3 py-1 rounded-full text-[11px] cursor-pointer font-[DM_Sans]
+               transition-all duration-200 whitespace-nowrap
+               hover:border-[#e8703a] hover:text-[#e8703a]">
+        {{ f }}
+      </button>
+    }
+  </div>
+
+</div>

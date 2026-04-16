@@ -1,59 +1,141 @@
-# Frontend
+# MedNLP – Medical Intelligence Platform
+### Angular 18 · Tailwind CSS v3 · Standalone Components · Signals
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.2.
+---
 
-## Development server
+## Project Structure
 
-To start a local development server, run:
-
-```bash
-ng serve
+```
+src/app/
+├── core/
+│   ├── models/
+│   │   └── mednlp.models.ts          ← All TypeScript interfaces
+│   └── services/
+│       ├── mednlp-api.service.ts     ← Upload + polling (HttpClient)
+│       ├── elasticsearch.service.ts  ← ES search (mock → real)
+│       └── chat.service.ts           ← Chat state + response generation
+│
+├── shared/
+│   ├── components/
+│   │   └── navbar.component.ts/html  ← Sticky nav with router links
+│   └── pipes/
+│       └── highlight.pipe.ts         ← Highlights search term in results
+│
+├── features/
+│   ├── analyze/components/
+│   │   ├── analyze-page.component    ← Page orchestrator
+│   │   ├── upload-panel.component    ← File picker + drag-drop
+│   │   ├── job-status.component      ← Polling progress steps
+│   │   ├── results-summary.component ← Clinical summary card
+│   │   ├── results-diseases.component← Disease tags with ICD-10
+│   │   └── results-labs.component    ← Lab table with flags
+│   │
+│   ├── search/components/
+│   │   ├── search-page.component     ← Page orchestrator
+│   │   ├── search-bar.component      ← Query + filters + quick chips
+│   │   └── search-results.component  ← ES result cards with highlight
+│   │
+│   └── chat/components/
+│       └── chat-modal.component      ← Slide-up AI chat panel
+│
+├── app.component.ts   ← Root shell (navbar + outlet + chat modal)
+├── app.routes.ts      ← Lazy-loaded routes
+└── app.config.ts      ← provideRouter + provideHttpClient
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+---
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Quick Start
 
 ```bash
-ng generate component component-name
+npm install
+npm start              # http://localhost:4200
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+---
 
-```bash
-ng generate --help
+## Wiring to Your Real Backend
+
+### 1 — Upload & Get Job ID
+
+In `analyze-page.component.ts`, replace the simulated block:
+
+```typescript
+// REAL — replace the simulated block in startUpload()
+this.api.uploadDocument(file, this.patientId(), this.docType()).subscribe({
+  next: res => { this.jobId.set(res.job_id); this._startPolling(res.job_id); },
+  error: err => { this.uploading.set(false); console.error(err); }
+});
 ```
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
+Your backend must return:
+```json
+{ "job_id": "JOB-XXXXXXXX" }
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+### 2 — Poll for Status / Results
 
-## Running unit tests
+`_startPolling()` is already wired to `mednlp-api.service.ts → pollJob()`.  
+Your backend must return one of:
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
+**While processing:**
+```json
+{ "status": "Extracting entities" }
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
+**When done:**
+```json
+{
+  "diseases_json": [{ "name": "...", "icd10": "...", "confidence": 0.97 }],
+  "labs_json":     [{ "test": "...", "value": "...", "unit": "...",
+                      "reference": "...", "status": "abnormal" }],
+  "summary_text":  "The patient has..."
+}
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+The type guard `isAnalysisResult()` in `mednlp.models.ts` distinguishes between the two automatically.
 
-## Additional Resources
+### 3 — Elasticsearch Search
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+In `elasticsearch.service.ts`, uncomment the real HTTP call and remove the mock:
+
+```typescript
+search(params: EsSearchParams): Observable<EsPatientRecord[]> {
+  const p = new HttpParams()
+    .set('q',        params.query)
+    .set('doc_type', params.docType)
+    .set('range',    params.dateRange);
+  return this.http.get<EsPatientRecord[]>(`${this.base}/search`, { params: p });
+}
+```
+
+### 4 — API Base URL
+
+Change `private base = '/api'` in each service to your real backend URL,  
+or configure a proxy in `proxy.conf.json`:
+
+```json
+{
+  "/api": {
+    "target": "http://localhost:8000",
+    "secure": false,
+    "changeOrigin": true
+  }
+}
+```
+
+Add to `angular.json` serve options: `"proxyConfig": "proxy.conf.json"`
+
+---
+
+## Tech Stack
+
+| Layer        | Choice                                 |
+|--------------|----------------------------------------|
+| Framework    | Angular 18 (standalone components)     |
+| State        | Angular Signals (`signal()`)           |
+| Styling      | Tailwind CSS v3 (inline class + style) |
+| HTTP         | Angular `HttpClient`                   |
+| Routing      | Angular Router (lazy-loaded)           |
+| Fonts        | Syne · DM Sans · DM Mono (Google)     |
+| Animations   | CSS keyframes via Tailwind config      |
