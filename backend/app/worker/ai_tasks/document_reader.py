@@ -9,6 +9,8 @@ from sentence_transformers import SentenceTransformer
 from langchain_community.vectorstores import Chroma
 import os
 
+from app.worker.ai_tasks.disease_extractor import get_negative_entities
+
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["HF_HUB_OFFLINE"] = "1"
@@ -24,7 +26,7 @@ converter = DocumentConverter()
 
 # Embedding model
 # model_name = "dmis-lab/biobert-base-cased-v1.1"
-model_name = "cached_models/models--sentence-transformers--all-MiniLM-L6-v2/snapshots/c9745ed1d9f207416be6d2e6f8de32d1f16199bf"
+model_name = "ai_models/cached_models/models--sentence-transformers--all-MiniLM-L6-v2/snapshots/c9745ed1d9f207416be6d2e6f8de32d1f16199bf"
 embeddings = HuggingFaceEmbeddings(model_name=model_name, cache_folder="cached_models")
 
 @time_metrics()
@@ -108,16 +110,15 @@ def embed_chunks_and_store_in_vector_db(all_splits):
 
     return vectorstore
 
-file_path = Path("samplePmedReport.pdf")
+# file_path = Path("testing_files/samplePmedReport.pdf")
 
 # markdown = extract_text_from_pdf(file_path)
 # chunks = chunk_text(markdown)
 
-# Path("discharge_sum.md").write_text(markdown)
+# Path("testing_files/discharge_sum.md").write_text(markdown)
 
 # for split in range(len(chunks)):
-#     print(f"chunk {split}\n {chunks[split]}")
-    # content = chunks[split].page_content
-    # negative_esnts = get_negative_entities(content)
-    # print(negative_esnts)
-
+#     # print(f"chunk {split}\n {chunks[split]}")
+#     content = chunks[split].page_content
+#     negative_esnts = get_negative_entities(content)
+#     print(negative_esnts)

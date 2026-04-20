@@ -1,6 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
 import medspacy
 from medspacy.section_detection import SectionRule, Sectionizer
+from app.worker.ai_tasks.icd10_mapper import ICD10Linker
 from spacy.tokens import Span
 from app.core.logger_setup import logger, time_metrics
 from loguru import logger as pyrush_logger
@@ -33,7 +34,7 @@ sectionizer.add([
     SectionRule(category="past_history", literal="Past Medical History", pattern=r"(?i)##\s*Past Medical History"),
 ])
 
-MODEL_PATH = ".diseases_model"
+MODEL_PATH = "ai_models/.diseases_model"
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
 # --- FORCE TRUNCATION HERE ---
@@ -59,7 +60,7 @@ def extract_diseases(text):
 
     for e in entities:
         if e["entity_group"] == "Disease":
-            diseases.append(e["word"])
+            diseases.append({e["word"], e['score']})
 
     return diseases
 
@@ -92,6 +93,10 @@ def get_negative_entities(text_chunks):
                     span._.confidence = float(e.get("score", 0.0))
                     spacy_ents.append(span)
 
+                    # Attach icd_10 score for later retrieval
+                    # span._.icd10 = None
+                    # spacy_ents.append(span)
+
         doc.ents = spacy_ents
         doc = context(doc)
 
@@ -103,18 +108,12 @@ def get_negative_entities(text_chunks):
 
             # Check if non-negated and update/add to dictionary
             if not ent._.is_negated:
+                icd10_linker = ICD10Linker()
                 seen_entities[name_lower] = {
                     "name": ent.text.strip(),
-                    "icd10": getattr(ent._, "concept_id", None), 
+                    "icd10": icd10_linker.link(name_lower)['icd10'], 
                     "confidence": round(ent._.confidence, 4)
                 }
 
     return list(seen_entities.values())
 
-# from pathlib import Path
-# from app.worker.ai_tasks.document_reader import chunk_text, extract_text_from_pdf
-# doc = Path("samplePmedReport.pdf")
-
-# mdDoc = extract_text_from_pdf(doc)
-# chunkz = chunk_text(mdDoc)
-# print(get_negative_entities(chunkz))

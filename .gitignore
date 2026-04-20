@@ -34,9 +34,12 @@ template/
 *.tmp
 *.bak
 *.swp
+*.db
 *.swo
 *.DS_Store
 *.pdf
 node_modules/
 dist/
 .angular/
+files/
+testing_files/

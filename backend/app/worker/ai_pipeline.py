@@ -13,6 +13,7 @@ from app.worker.ai_tasks.document_reader import (
     clean_and_normalize_text,
 )
 from app.worker.ai_tasks.disease_extractor import get_negative_entities
+from app.worker.ai_tasks.icd10_mapper import ICD10Linker
 from app.worker.ai_tasks.lab_extractor import extract_labs
 from app.worker.ai_tasks.summarizer import summarize_content
 logger = CentralizedLogger.get_logger(__name__)
@@ -23,6 +24,7 @@ def run_ner_pipeline(file_content, job_id, original_filename):
     Running NER pipeline
     """
     job = Job.fetch(job_id, connection=redis_conn)
+    update_status("Worker has started processing doc", job)
 
     try:
 
@@ -69,6 +71,7 @@ def run_ner_pipeline(file_content, job_id, original_filename):
         logger.info("Getting the diseases")
         diseases = get_negative_entities(cleaned_text_strings)
 
+        
         # Extracting lab results
         update_status('Extracting lab results', job)
         logger.info("Extracting Lab results")
@@ -81,20 +84,20 @@ def run_ner_pipeline(file_content, job_id, original_filename):
 
         # return vector_store, retriever, cleaned_text
 
-        # Generating summary
-        update_status('Generating summary', job)
-        logger.info("Generating summary")
-        summary_text = summarize_content(str({
-            # "extracted_text": extracted_text,
-            "diseases_json": diseases,
-            "labs_json": lab_results,
-        }))
+        # # Generating summary
+        # update_status('Generating summary', job)
+        # logger.info("Generating summary")
+        # summary_text = summarize_content(str({
+        #     # "extracted_text": extracted_text,
+        #     "diseases_json": diseases,
+        #     "labs_json": lab_results,
+        # }))
 
         result = {
             "extracted_text": extracted_text,
             "diseases_json": diseases,
             "labs_json": lab_results,
-            "summary_text": summary_text,
+            "summary_text": "Patient has diabetes and sugar",
         }
 
         update_status(result, job)

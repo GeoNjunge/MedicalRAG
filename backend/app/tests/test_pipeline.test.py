@@ -46,10 +46,10 @@ def test_job_polling_lifecycle(mock_worker_dependencies):
     q.enqueue(run_ner_pipeline, file_content=b"fake pdf", job_id=test_job_id)
 
     # 4. Call the endpoint
-    response = client.get(f"/api/v1/job_status/{test_job_id}")
+    response = client.get(f"/api/v1/status/{test_job_id}")
 
     # 5. Assertions
     assert response.status_code == 200
     data = response.json()
-    assert data['job_status'] == "Completed"
+    assert data['status'] == "Completed"
     assert "diseases_json" in data["result"]

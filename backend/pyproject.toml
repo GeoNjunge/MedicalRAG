@@ -18,5 +18,5 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 # This tells setuptools to look for the 'app' package in the current directory
-where = ["."]
-include = ["app*", "practice*"]
+where = [".", "../"]
+include = ["app*", "tests*", "backend*"]
