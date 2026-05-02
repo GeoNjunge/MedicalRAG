@@ -35,3 +35,9 @@ Choice of model was **qwen2.5-coder:3b**
 
 If using windows always make sure the running backend can be able to access 
 [Link to ollama docs](https://docs.ollama.com/api/introduction)
+
+
+
+# Backened
+from root directory install 
+```pip install -e ./ml_core```
