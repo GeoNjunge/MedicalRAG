@@ -2,13 +2,13 @@ from pathlib import Path
 
 from fastapi import UploadFile
 from typing import Optional
-from apps.api.app.services.file_validation import validator
-from apps.api.app.storage.s3 import uploader
+from app.services.file_validation import validator
+from app.storage.s3 import uploader
 from sqlalchemy.orm import Session
-from apps.api.app.core.logger_setup import logger, CentralizedLogger
-from apps.api.app.models.job import Job
-from apps.api.app.queue.job_queue import queue
-from apps.api.app.services.push_job_to_redis import push_job
+from app.core.logger_setup import logger, CentralizedLogger
+from app.models.job import Job
+from app.queue.job_queue import queue
+from app.services.push_job_to_redis import push_job
 
 logger = CentralizedLogger.get_logger(__name__)
 

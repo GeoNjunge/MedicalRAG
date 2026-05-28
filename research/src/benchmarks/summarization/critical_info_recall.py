@@ -30,11 +30,13 @@ class Evaluator:
     def llm_judge(self, summary_text):
         pass
 
+test_results = []
 
 
-evaluator = Evaluator(ex_res)
-print(
-    evaluator.calculate_lab_recall(
-        "Chest X-Ray The patient has a confirmed positive sputum culture for Staphylococcus aureus and shows typical abnormal findings of pneumonia on chest X-ray. The complete blood count results are within normal limits."
-    )
-)
+
+# evaluator = Evaluator(ex_res)
+# print(
+#     evaluator.calculate_lab_recall(
+#         "Chest X-Ray The patient has a confirmed positive sputum culture for Staphylococcus aureus and shows typical abnormal findings of pneumonia on chest X-ray. The complete blood count results are within normal limits."
+#     )
+# )

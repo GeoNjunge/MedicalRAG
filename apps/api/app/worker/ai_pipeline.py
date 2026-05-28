@@ -1,21 +1,21 @@
 from pathlib import Path
 
-from apps.api.app.core.logger_setup import CentralizedLogger, time_metrics
+from app.core.logger_setup import CentralizedLogger, time_metrics
 import tempfile, os
 from rq.job import Job
-from apps.api.app.worker.worker import redis_conn
+from app.worker.worker import redis_conn
 import json
 
-from apps.api.app.worker.ai_tasks.document_reader import (
+from ml_core.src.ml_core.pipeline.document_reader import (
     extract_text_from_pdf,
     embed_chunks_and_store_in_vector_db,
     chunk_text,
     clean_and_normalize_text,
 )
-from apps.api.app.worker.ai_tasks.disease_extractor import get_negative_entities
-from apps.api.app.worker.ai_tasks.icd10_mapper import ICD10Linker
-from apps.api.app.worker.ai_tasks.lab_extractor import extract_labs
-from apps.api.app.worker.ai_tasks.summarizer import summarize_content
+from ml_core.src.ml_core.pipeline.disease_extractor import get_negative_entities
+from ml_core.src.ml_core.pipeline.icd10_mapper import ICD10Linker
+from ml_core.src.ml_core.pipeline.lab_extractor import extract_labs
+from ml_core.src.ml_core.pipeline.summarizer import summarize_content
 logger = CentralizedLogger.get_logger(__name__)
 
 @time_metrics()

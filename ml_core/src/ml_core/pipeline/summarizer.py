@@ -1,6 +1,6 @@
 import ollama
-from app.core.config import config
-from app.core.logger_setup import time_metrics, CentralizedLogger
+from apps.api.app.core.config import config
+from apps.api.app.core.logger_setup import time_metrics, CentralizedLogger
 
 logger = CentralizedLogger.get_logger("summarizer")
 
@@ -16,9 +16,9 @@ The object will look like this
             "labs_json": lab_results, # lab results
 }
 
-Generate a 50 - 100 word concise, precise and complete summary of the patient's medical information, including:
+Generate a concise, precise and complete summary of the patient's medical information, including:
 1. Key findings from the extracted text.
-2. Summary of diseases and their severity levels, along with brief descriptions.
+2. Summary of diseases and their severity levels.
 3. Summary of laboratory results, highlighting important test names, values, units, and normal ranges.
 4. Any mismatches.
 Note: Dont add extra information that is not in the given input
@@ -43,14 +43,19 @@ Objective: Create a comprehensive summary that highlights the main points of the
 # print(summarize_content(str(sample_data)))
 
 
-from app.core.config import config
+from apps.api.app.core.config import config
 from llama_cpp import Llama
 
 # Use the blob path from your Ollama modelfile
-model_path = "/home/ubuntu/.ollama/models/blobs/sha256-c5396e06af294bd101b30dce59131a76d2b773e76950acc870eda801d3ab0515"
+MODELS = {
+    # "qwen_coder2_3b":"/home/ubuntu/.ollama/models/blobs/sha256-4a188102020e9c9530b687fd6400f775c45e90a0d7baafe65bd0a36963fbb7ba",
+    "qwen_0.5b": "/home/ubuntu/.ollama/models/blobs/sha256-c5396e06af294bd101b30dce59131a76d2b773e76950acc870eda801d3ab0515",
+    "qwen_1.5b": "/home/ubuntu/.ollama/models/blobs/sha256-183715c435899236895da3869489cc30ac241476b4971a20285b1a462818a5b4",
+    "qwen_3b": "/home/ubuntu/.ollama/models/blobs/sha256-5ee4f07cdb9beadbbb293e85803c569b01bd37ed059d2715faa7bb405f31caa6"
+}
 
 client = Llama(
-    model_path=model_path,
+    model_path=MODELS["qwen_1.5b"],
     n_ctx=2048,   # Context window
     n_threads=2,    
     chat_format="qwen",

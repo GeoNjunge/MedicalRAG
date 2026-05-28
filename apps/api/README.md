@@ -4,7 +4,7 @@
 
 ```bash
 git clone <your-repo-url>
-cd MedicalRAG/redesigned_backend
+cd /apps/api
 ```
 
 ---

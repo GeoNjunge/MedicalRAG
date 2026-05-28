@@ -48,6 +48,7 @@ src/app/
 ## Quick Start
 
 ```bash
+cd /apps/web/frontend
 npm install
 npm start              # http://localhost:4200
 ```

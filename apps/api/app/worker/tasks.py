@@ -1,9 +1,9 @@
-from apps.api.app.core.logger_setup import logger, CentralizedLogger, time_metrics
-from apps.api.app.models.job import Job
-from apps.api.app.database.session import SessionLocal
-from apps.api.app.core.config import AppConfig 
+from app.core.logger_setup import logger, CentralizedLogger, time_metrics
+from app.models.job import Job
+from app.database.session import SessionLocal
+from app.core.config import AppConfig 
 from botocore.client import Config, ClientError
-from apps.api.app.worker.ai_pipeline import run_ner_pipeline
+from app.worker.ai_pipeline import run_ner_pipeline
 from urllib.parse import urlparse, unquote
 from datetime import datetime, timezone
 

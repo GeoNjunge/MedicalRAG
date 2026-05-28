@@ -1,7 +1,7 @@
 from sqlalchemy import StaticPool, create_engine, text
 from sqlalchemy.orm import sessionmaker
 import os
-from apps.api.app.core.config import config
+from app.core.config import config
 
 database_url = config.DATABASE_URL 
 sqlite_file_name = "docs.db"

@@ -1,11 +1,11 @@
 from fastapi import APIRouter, UploadFile, File, Form, Depends
-from apps.api.app.schemas.upload import UploadResponseSchema
+from app.schemas.upload import UploadResponseSchema
 from typing import Optional
 from sqlalchemy.orm import Session
-from apps.api.app.database.session import get_db
-from apps.api.app.services.upload_services import upload_file
-from apps.api.app.core.logger_setup import logger, CentralizedLogger
-from apps.api.app.worker.worker import redis_conn
+from app.database.session import get_db
+from app.services.upload_services import upload_file
+from app.core.logger_setup import logger, CentralizedLogger
+from app.worker.worker import redis_conn
 from rq.job import Job
 import random
 import numpy as np

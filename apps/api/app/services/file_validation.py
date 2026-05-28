@@ -4,7 +4,7 @@ import fitz
 import os
 import hashlib
 from fastapi import UploadFile, File
-from apps.api.app.core.logger_setup import logger, CentralizedLogger
+from app.core.logger_setup import logger, CentralizedLogger
 
 logger = CentralizedLogger.get_logger(__name__)
 

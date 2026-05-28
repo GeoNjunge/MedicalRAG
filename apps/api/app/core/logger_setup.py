@@ -52,7 +52,7 @@ class CentralizedLogger:
 
             if not error_logger.handlers:
                 error_logger.addHandler(error_handler)
-                error_handler.propagate = True
+                error_handler.propagate = False
             
         return new_logger
     
@@ -90,9 +90,10 @@ class CentralizedLogger:
                         
                         if attempt == retries - 1:
                             error_logger.error(f"STATUS: FINAL FAILURE | FUNC: {func.__name__}")
-                            raise e
+                            raise e                        
                         
                         time.sleep(backoff_in_seconds)
+
             return wrapper
         return decorator
         

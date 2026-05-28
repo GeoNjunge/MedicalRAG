@@ -1,9 +1,9 @@
 import uuid
 import boto3
-from apps.api.app.core.config import config as app_config
+from app.core.config import config as app_config
 from fastapi import UploadFile
 from botocore.client import Config
-from apps.api.app.core.logger_setup import CentralizedLogger
+from app.core.logger_setup import CentralizedLogger
 from starlette.concurrency import run_in_threadpool
 
 logger = CentralizedLogger.get_logger(__name__)

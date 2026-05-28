@@ -1,45 +1,37 @@
-## Architecture Decisions
+## AI Pipeline
+[Architechture](/docs/architecture_eval.png)
 
-### 1 Document Processing Pipeline
+### 1. Document Ingestion
 
-* **Decision:** Docling chosen over PyMuPDF for 95% semantic preservation.
-* **Trade-off:** ~2× slower, but prioritizes accuracy for clinical data.
-* **Optimization:** Asynchronous processing implemented via **Redis RQ** for high-throughput, non-blocking ingestion.
+* Supports scanned and digital medical documents
+* OCR via Docling
+* convert to markdown
+* use semantic chunking(slower but context aware)with 90% cosine similarity/ markdown splitter(faster but low contextual comprehension) 
 
-### 2 NLP Models
+### 2. Disease Extraction (Critical Stage)
+* NER using PubMedBERT
+* Focus on:
+  * diseases
+  
+### 3. Lab Extraction (Critical Stage)
+* NLP using medSpaCy
+* Focus on:
+  * Lab values 
+    * Uses TargetRules with a predefined set of Common tests
 
-* **Decision:** medSpaCy NegEx preferred over ConvNLP.
-* **Rationale:** 92% F1-score provides sufficient accuracy while improving processing speed ~3×.
-* **Impact:** Ensures reliable extraction of clinical entities under large-scale loads.
+### 4. ICD10 mapper (Non-Critical but essential Stage)
+* Custom class that uses an offline knowledge base
+* Focus on:
+  * ICD10 codes
+    * Uses a csv file with 70K+ ICD10 codes mapped to disease descriptions and names
 
-### 3 Embeddings
+### 5. Summarization (Critical)
+* Offline LLM for summarizing the structured data
+* Focus on:
+  * Summarization
+    * Uses qwen2.5-1.5B model to summarize the structured data.
+    * Also uses llama.cpp to improve inference speeds on CPU only hardware
 
-* **Decision:** `sentence-transformers/all-MiniLM-L6-v2` used for chunk embeddings.
-* **Reasoning:** Balanced accuracy, speed, and scalability for real-time document ingestion.
-* **Trade-offs:** Limited understanding of highly specialized medical jargon; BioBERT remains a higher-accuracy alternative for future domain-specific deployments.
-
-### 4 Job Queue
-
-* **Decision:** Redis RQ selected over Celery and Kafka.
-* **Justification:** Lightweight, simple for team adoption, sufficient for projected workload.
-* **Future-proofing:** Easily replaceable with Celery or Kafka for higher scale or distributed pipelines.
-
-### 5 Semantic Chunking
-
-* **Approach:** Threshold set at the 80th percentile cosine similarity.
-* **Experimentation:** Tested 70–90%; 80% offered optimal balance of chunk relevance and efficiency.
-* **Outcome:** Consistent, accurate semantic segmentation for downstream retrieval and summarization.
-
-### 6 Telemetry & Logging
-
-* **Decision:** Custom telemetry logger implemented using `functools` wrappers with retry mechanisms.
-* **Benefits:** Centralized, structured logging; decoupled from business logic; supports scalable monitoring and debugging in production.
-
-### 7 Disease Extraction
-* **Decision:** PubMedBert.
-* **Rationale:** 82% F1-score provides sufficient accuracy while improving inference speed.
-
-### 8 Lab Entities Extraction
-* **Decision:** Medspacy's nlp
-* **Rationale:** Very fast parsing speed vs using a model for inference.
-* **Impact:** Reduces time required to process lab entities from a document.
+### Why not just feed the LLM the complete document.
+* Was trying to filter noise by reducing irrelevant context
+* and to reduce latency during summarization(more context == higher latency).

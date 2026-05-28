@@ -1,8 +1,8 @@
 from fastapi import FastAPI
-from apps.api.app.api.v1.routes.upload import router as upload_router
-from apps.api.app.core.logger_setup import logger, CentralizedLogger
+from app.api.v1.routes.upload import router as upload_router
+from app.core.logger_setup import CentralizedLogger
 from fastapi.middleware.cors import CORSMiddleware
-from apps.api.app.database.init_db import init_db
+# from app.database.init_db import init_db
 
 
 logger = CentralizedLogger.get_logger(__name__)

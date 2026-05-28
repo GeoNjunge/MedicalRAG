@@ -1,0 +1,41 @@
+**Patient Information Summary:**
+
+- **Patient Name:** Doe / PRÉNOM: Joe
+- **Date of Birth:** 12-APR-1985
+- **Gender:** Male
+- **Address:** 123 Main St, "Apt 4B", Springfield, OR, 97477
+- **Height:** 180cm
+- **Weight:** 85kg
+- **Contact Information:**
+  - **Phone:** 550-8400
+  - **Email:** [SCAN_ERR_042]  [SCAN_ERR_042]
+- **Medical History:**
+  - **BIOCHEMICAL ANALYSIS:**
+    - Glucose: 104.00 mg/dL (70.0 - 99.9)
+    - HbA1c: 5,8% (CRITICAL_HIGH 3.5-5.1)
+    - Potassium: 6.1 mEq/L (CRITICAL_HIGH 3.5-5.1)
+  - **Lipid Subtable:**
+    - Total Chol: 215 mg/dL (High 100-199)
+    - LDL: 145 mg/dL (High 100-199)
+    - HDL: 42 mg/dL (Low_Ok >40)
+- **Laboratory Results:**
+  - **Hemoglobin (HGB): 14.2 g/dL (Note: Uses asterisk for exponent)**
+  - **White Blood Cell Count (WBC): 12.5 K/uL**
+  - **Red Blood Cell Count (RBC): 4.82 M/uL**
+  - **Platelet Count (PLT): 145 10*3/mcL (Note: Uses asterisk for exponent)**
+- **Mismatches:**
+  - **Hemoglobin (HGB): 14.2 g/dL (Note: Uses asterisk for exponent)**
+  - **Platelet Count (PLT): 145 10*3/mcL (Note: Uses asterisk for exponent)**
+  - **White Blood Cell Count (WBC): 12.5 K/uL**
+  - **Red Blood Cell Count (RBC): 4.82 M/uL**
+  - **Total Chol: 215 mg/dL (High 100-199)**
+  - **Lipid Subtable:**
+    - LDL: 145 mg/dL (High 100-199)
+    - HDL: 42 mg/dL (Low_Ok >40)
+    - Total Chol: 215 mg/dL (High 100-199)
+
+**Additional Notes:**
+- **Date of Birth:** 12-APR-1985
+- **Height:** 180cm
+- **Weight:** 85kg
+- **Contact Information:** Phone: 550-8400, Email: [SCAN_ERR_042]  [SCAN_ERR_042]

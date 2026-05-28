@@ -1,0 +1,49 @@
+{
+    "extracted_text": "L@B0R4T0RY R3P0RT (v.2.1-beta) Ref ID: [SCAN\\_ERR\\_042]  UUID: 550e8400-e29b-41d4-a716-446655440000 PATIENT\\_INFO\\_BLOCK\n\n- NOM: Doe / PR\u00c9NOM: Joe\n- D.O.B.: 12-APR-1985 (Format: DD-MMM-YYYY)\n- GENDER: M  Hgt: 180cm  Wgt: 85kg\n- ADDR: 123 Main St, \"Apt 4B\", Springfield, OR, 97477 (Note: contains quotes and commas)\n\n\ud83e\uddea BIO-CHEMICAL ANALYSIS [SECTION\\_ID: 99]\n\nComponent [1]  Value  Unit  Status  Ref\\_Range\n\nGlucose  104.00  mg/dL  \u2757  70.0 - 99.9 HbA1c  5,8  %  Abn  &lt;5.7 Potassium  6.1  mEq/L  CRITICAL\\_HIGH  3.5-5.1\n\nLIPIDS\\_SUBTABLE\n\nTotal\\_Chol  215  mg/dL  High  100-199 LDL  145  mg/dL  [!]  &lt;100 HDL  42  mg/dL  Low\\_Ok  &gt;40\n\nDATA EXTRACTION STRESSORS (DEBUG)\n\n1. Inconsistent Decimals: Uses both . (104.00) and , (5,8) as decimal separators.\n2. Nested Table Hack: The LIPIDS\\_SUBTABLE is embedded inside the main table structure using empty cells and &gt; prefixing.\n3. Broken Date Logic: Header uses DD-MMM-YYYY, but the footer might use YYYY.MM.DD.\n4. Mixed Languages: \"NOM\" (French) vs \"GENDER\" (English).\n5. Non-Standard Units: x10^3/uL vs cells/mm3 (see below).\n\nSECTION: HEMATOLOGY (OCR\\_ARTIFACTS\\_PRESENT)\n\n- WBC: 12.5 K/uL [Ref: 4.0-11.0]\n- RBC: 4.82 M/uL\n- HGB: 14.2 g/dL\n- PLT: 145 10*3/mcL (Note: Uses asterisk for exponent)\n\nLAB\\_COMMENTS\\_NULL\\_TERMINATED ERR: Field [Comments] contains unescaped characters: \"Patient reported 'feeling dizzy'; BP was 140/90.\" [SYSTEM\\_NOTE]: Hemolysis detected in Potassium sample. Result 6.1 might be skewed +15%. Verified\\_By: Dr. J. Smith\\_ID#9821 Report Printed: 2026.03.24 @ 14:49:10",
+    "diseases_json": [],
+    "labs_json": [
+        {
+            "test": "GLUCOSE",
+            "value": "104.00",
+            "unit": "mg/dL",
+            "status": "\u2757"
+        },
+        {
+            "test": "POTASSIUM",
+            "value": "6.1",
+            "unit": "%",
+            "status": "NORMAL"
+        },
+        {
+            "test": "TOTAL",
+            "value": "215",
+            "unit": "mg/dL",
+            "status": "High"
+        },
+        {
+            "test": "HDL",
+            "value": "42",
+            "unit": "mg/dL",
+            "status": "Low"
+        },
+        {
+            "test": "WBC",
+            "value": "12.5",
+            "unit": "K/uL",
+            "status": "NORMAL"
+        },
+        {
+            "test": "HGB",
+            "value": "14.2",
+            "unit": "g/dL",
+            "status": "NORMAL"
+        },
+        {
+            "test": "PLT",
+            "value": "145",
+            "unit": "10*3/mcL",
+            "status": "NORMAL"
+        }
+    ],
+    "summary_text": "### Summary of Patient's Medical Information\n\n#### Key Findings from Extracted Text:\n- The patient's glucose level is 104.00 mg/dL, which is above the normal range of 70-100 mg/dL.\n- Potassium levels are 6.1%, which is within the normal range of 3.5-5.0%.\n- Total cholesterol is 215 mg/dL, which is high, indicating a risk of cardiovascular disease.\n- HDL cholesterol is 42 mg/dL, which is low, indicating a risk of heart disease.\n- White blood cell count is 12.5 K/uL, which is within the normal range of 4-10 K/uL.\n- Hemoglobin levels are 14.2 g/dL, which are within the normal range of 12-16 g/dL.\n- Platelet count is 145 10*3/mcL, which is within the normal range of 150-400 10*3/mcL.\n\n#### Summary of Diseases and Their Severity Levels:\n- No diseases are listed in the provided data.\n\n#### Summary of Laboratory Results:\n- **Glucose:** Elevated (104.00 mg/dL, normal range 70-100 mg/dL, status: \u2757)\n- **Potassium:** Normal (6.1%, normal range 3.5-5.0%, status: NORMAL)\n- **Total Cholesterol:** High (215 mg/dL, normal range 200-230 mg/dL, status: High)\n- **HDL Cholesterol:** Low (42 mg/dL, normal range 40-60 mg/dL, status: Low)\n- **White Blood Cell Count (WBC):** Normal (12.5 K/uL, normal range 4-10 K/uL, status: NORMAL)\n- **Hemoglobin (HGB):** Normal (14.2 g/dL, normal range 12-16 g/dL, status: NORMAL)\n- **Platelet Count (PLT):** Normal (145 10*3/mcL, normal range 150-400 10*3/mcL, status: NORMAL)\n\n#### Mismatches:\n- The patient's glucose level is elevated, indicating potential issues with blood sugar control.\n- The total cholesterol level is high, suggesting a risk of cardiovascular disease.\n- The HDL cholesterol level is low, indicating a risk of heart disease."
+}

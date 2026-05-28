@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     make \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python -m venv /venv
+RUN source /app/apps/api/venv/bin/activate
 ENV PATH="/venv/bin:$PATH"
 
 RUN pip install --upgrade pip
@@ -25,7 +25,6 @@ RUN pip install --upgrade pip \
     && pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu \
     && pip install -r requirements.txt
 
-
 # Copy the backend code
 COPY / .
 
@@ -33,4 +32,4 @@ COPY / .
 EXPOSE 8000
 
 # Run the app using uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python" "uvicorn", "apps.api.app.main:app", "--host", "0.0.0.0", "--port", "8000"]

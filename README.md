@@ -16,8 +16,10 @@ Medical RAG is a backend system that:
 
 * Processes unstructured clinical documents (lab reports, notes)
 * Extracts **high-signal structured medical entities**
-* Reduces hallucination by **constraining LLM inputs**
+* *Tries to* reduce hallucination by **constraining LLM inputs**
 * Produces **verifiable, structured outputs**
+
+**Reason for saying tries to is because different models behave differently as you will notice in the [test results](/test_results/) folder**
 
 The system prioritizes:
 
@@ -61,6 +63,14 @@ This shifts the pipeline from:
 > to
 > **“generate only what is already grounded”**
 
+
+## Tradeoffs of this Approach
+
+* Filtering noise means reducing the amount of context, some of which is important
+* Smaller LLMs(0.5B) have problems parsing & understanding structured data formats like json
+* Increases complexity
+
+
 ---
 
 ## System Architecture
@@ -78,43 +88,7 @@ Document → OCR → NER → Entity Filtering → Chunking → Embeddings → Re
 * Async pipeline for scalable ingestion
 * CPU-efficient design for low-resource environments
 
-Full architecture: `/docs/ARCHITECTURE.md`
-
----
-
-## AI Pipeline
-
-### 1. Document Ingestion
-
-* Supports scanned and digital medical documents
-* OCR via Docling
-
-### 2. Structured Extraction (Critical Stage)
-
-* NER using medSpaCy + PubMedBERT
-* Focus on:
-
-  * lab values
-  * diseases
-  * medications
-
-### 3. Noise Reduction
-
-* Filters irrelevant text
-* Reduces token load for downstream models
-
-### 4. Retrieval Layer
-
-* Semantic chunking
-* Embeddings via MiniLM
-* Context selection for generation
-
-### 5. Constrained Generation
-
-* LLM operates only on structured, high-signal inputs
-* Reduces hallucination surface area
-
----
+[Full architecture](/docs/ARCHITECTURE.md)
 
 ## Reliability Mechanisms
 
@@ -136,7 +110,7 @@ This ensures:
 ## Backend System
 
 * FastAPI for API layer
-* PostgreSQL for structured data
+* sqlite for structured data
 * Redis RQ for async processing
 * JSON schemas for validation and versioning
 
@@ -146,6 +120,8 @@ System designed for:
 * modular extension
 * production deployment
 
+[Setup](/docs/SETUP.md)
+
 ---
 
 ## Performance
@@ -154,7 +130,7 @@ System designed for:
 * Reduced inference latency: **5.2s → 150ms**
 * Optimized for CPU-only environments (no GPU)
 
-Benchmarks: `/docs/METRICS.md`
+[Benchmarks: ](/docs/METRICS.md)
 
 ---
 
@@ -186,14 +162,6 @@ This project demonstrates:
 
 ---
 
-## Running Locally
-
-```bash
-git clone <repo>
-cd apps/api/
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
 
 ---
 

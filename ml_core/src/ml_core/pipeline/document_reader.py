@@ -10,10 +10,11 @@ from langchain_community.vectorstores import Chroma
 from docling.document_converter import DocumentConverter
 from apps.api.app.core.logger_setup import logger, CentralizedLogger, time_metrics
 import os
-from ml_core.config import SENTENCE_TRANSFORMER_PATH
+import fitz
+from ml_core.config import SENTENCE_TRANSFORMER_PATH, MODELS_BASE_PATH
 
 
-from apps.api.app.worker.ai_tasks.disease_extractor import get_negative_entities
+from ml_core.src.ml_core.pipeline.disease_extractor import get_negative_entities
 
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
@@ -26,14 +27,14 @@ converter = DocumentConverter()
 
 # Embedding model
 # model_name = "dmis-lab/biobert-base-cased-v1.1"
-model_name = str(SENTENCE_TRANSFORMER_PATH)
+model_name = str("ml_core/src/ml_core/models/cached_models/models--sentence-transformers--all-MiniLM-L6-v2/snapshots/c9745ed1d9f207416be6d2e6f8de32d1f16199bf")
 
 embeddings = HuggingFaceEmbeddings(model_name=model_name,
-                                    cache_folder=f"{SENTENCE_TRANSFORMER_PATH.parent}",
+                                    cache_folder=f"{MODELS_BASE_PATH}",
                                     model_kwargs={'device': 'cpu'})
 
 @time_metrics()
-def extract_text_from_pdf(file) -> str:
+def extract_text_from_pdf_with_docling(file) -> str:
     """
     Extracts text from PDF using Docling with rapidOCR
     """
@@ -49,25 +50,54 @@ def extract_text_from_pdf(file) -> str:
     return mark_doc
 
 @time_metrics()
+def extract_text_with_pymupdf(file) -> str:
+    """
+    Extracts text from pdf without OCR. Uses fitz(pymupdf)
+    """
+    doc = fitz.open(file)
+
+    text = ""
+
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)
+
+        page_text = page.get_text()
+
+        text += page_text
+
+    return text
+
+@time_metrics()
+def extract_text_from_pdf(file):
+    try:
+        text = extract_text_with_pymupdf(fileq)
+    except Exception as e:
+        logger.warning("Could not complete extraction using PyMuPDF", exc_info=e)
+
+        text = extract_text_from_pdf_with_docling(file)
+
+    return text
+
+@time_metrics()
 def chunk_text(markdown_file):
-    headers_to_split_on = [
-    ("##", "Header")]
-    # markdown header splitter
-    splitter = MarkdownHeaderTextSplitter(
-       headers_to_split_on=headers_to_split_on,
-        strip_headers=False
-    )
-    # markdown header splitter
-    all_splits = splitter.split_text(markdown_file)
+    # headers_to_split_on = [
+    # ("##", "Header")]
+    # # markdown header splitter
+    # splitter = MarkdownHeaderTextSplitter(
+    #    headers_to_split_on=headers_to_split_on,
+    #     strip_headers=False
+    # )
+    # # markdown header splitter
+    # all_splits = splitter.split_text(markdown_file)
 
     # Semantic chunker
-    # splitter = SemanticChunker(
-    #         embeddings,
-    #         breakpoint_threshold_type="percentile",
-    #         breakpoint_threshold_amount=80
-    # )
+    splitter = SemanticChunker(
+            embeddings,
+            breakpoint_threshold_type="percentile",
+            breakpoint_threshold_amount=80
+    )
 
-    # all_splits = splitter.create_documents([markdown_file])
+    all_splits = splitter.create_documents([markdown_file])
 
     # splitter = RecursiveCharacterTextSplitter(
     #    chunk_size=512,
@@ -113,15 +143,23 @@ def embed_chunks_and_store_in_vector_db(all_splits):
 
     return vectorstore
 
-# file_path = Path("testing_files/samplePmedReport.pdf")
+import json
+file_path = Path("samplePmedReport.pdf")
 
-# markdown = extract_text_from_pdf(file_path)
-# chunks = chunk_text(markdown)
+markdown = extract_text_from_pdf(file_path)
 
-# Path("testing_files/discharge_sum.md").write_text(markdown)
+chunks = chunk_text(markdown)
 
-# for split in range(len(chunks)):
-#     # print(f"chunk {split}\n {chunks[split]}")
-#     content = chunks[split].page_content
-#     negative_esnts = get_negative_entities(content)
-#     print(negative_esnts)
+chunks = clean_and_normalize_text(chunks)
+    
+entities = []
+Path("samplePmedReport_md.md").write_text(str(chunks))
+
+for split in range(len(chunks)):
+    # print(f"chunk {split}\n {chunks[split]}")
+    content = chunks[split].page_content
+
+    entities.append(get_negative_entities(content))
+
+Path("samplePmedReport_md.json").write_text(json.dumps(entities))
+    

@@ -1,7 +1,7 @@
-from apps.api.app.database.base import Base
-from apps.api.app.database.session import engine
-from apps.api.app.models.job import Job
-from apps.api.app.core.logger_setup import logger, CentralizedLogger
+from app.database.base import Base
+from app.database.session import engine
+from app.models.job import Job
+from app.core.logger_setup import logger, CentralizedLogger
 
 logger = CentralizedLogger.get_logger(__name__)
 

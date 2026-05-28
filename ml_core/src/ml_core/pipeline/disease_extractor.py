@@ -1,10 +1,10 @@
 from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
 import medspacy
 from medspacy.section_detection import SectionRule, Sectionizer
-from apps.api.app.worker.ai_tasks.icd10_mapper import ICD10Linker
+from ml_core.src.ml_core.pipeline.icd10_mapper import ICD10Linker
 from spacy.tokens import Span
 from apps.api.app.core.logger_setup import CentralizedLogger, time_metrics
-from ml_core.models import DISEASES_MODEL_PATH
+from ml_core.src.ml_core.models import DISEASES_MODEL_PATH
 from loguru import logger as pyrush_logger
 
 logger = CentralizedLogger.get_logger(__name__)
@@ -45,6 +45,9 @@ tokenizer.truncation_side = "right"
 
 model = AutoModelForTokenClassification.from_pretrained(DISEASES_MODEL_PATH)
 
+# ICD10 linker
+icd10_linker = ICD10Linker()
+
 ner_pipeline = pipeline(
     "token-classification",
     model=model,
@@ -61,7 +64,7 @@ def extract_diseases(text):
 
     for e in entities:
         if e["entity_group"] == "Disease":
-            diseases.append({e["word"], e['score']})
+            diseases.append({"disease": e["word"], "score": e['score']})
 
     return diseases
 
@@ -99,7 +102,8 @@ def get_negative_entities(text_chunks):
                         # span._.icd10 = None
                         # spacy_ents.append(span)
 
-            doc.ents = spacy_ents
+            # doc.ents = spacy_ents
+            doc.set_ents(spacy_ents)
             doc = context(doc)
 
             for ent in doc.ents:
@@ -110,7 +114,6 @@ def get_negative_entities(text_chunks):
 
                 # Check if non-negated and update/add to dictionary
                 if not ent._.is_negated:
-                    icd10_linker = ICD10Linker()
                     seen_entities[name_lower] = {
                         "name": ent.text.strip(),
                         "icd10": icd10_linker.link(name_lower)['icd10'], 

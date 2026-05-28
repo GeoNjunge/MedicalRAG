@@ -9,7 +9,7 @@ class ICD10Linker:
             cls._instance = super(ICD10Linker, cls).__new__(cls)
             # Load the CSV - Assuming columns: Code_Short, Type, Code_Full, Description, Long_Desc, Category
             # Based on your data: A010,4,A0104,"Typhoid arthritis"
-            cls._instance.df = pd.read_csv("data/codes.csv", names=["Short", "Type", "Full", "Desc", "Long", "Cat"], header=0)
+            cls._instance.df = pd.read_csv("ml_core/src/ml_core/pipeline/data/codes.csv", names=["Short", "Type", "Full", "Desc", "Long", "Cat"], header=0)
             # Create a list of descriptions for fast matching
             cls._instance.descriptions = cls._instance.df['Desc'].tolist()
             cls._instance.linked_data = {}

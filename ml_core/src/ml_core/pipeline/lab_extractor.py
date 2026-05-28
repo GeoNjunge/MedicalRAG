@@ -4,7 +4,7 @@ import medspacy
 from medspacy.ner import TargetRule
 import json
 
-from apps.api.app.worker.ai_tasks.document_reader import chunk_text, clean_and_normalize_text, extract_text_from_pdf
+from ml_core.src.ml_core.pipeline.document_reader import chunk_text, clean_and_normalize_text, extract_text_from_pdf
 
 nlp = medspacy.load()
 target_matcher = nlp.get_pipe('medspacy_target_matcher')
@@ -117,7 +117,7 @@ def extract_labs(chunks):
         for res in results:
             name = res['test'].upper().replace("SGPT", "ALT").strip()
 
-            if name is not final_report or (final_report[name]['value'] == "N/A" and res['value'] != "N/A"):
+            if name not in final_report or (final_report[name]['value'] == "N/A" and res['value'] != "N/A"):
                 final_report[name] = {
                     "test": name,
                     "value": res["value"],

@@ -8,4 +8,4 @@ version = "0.1.0"
 dependencies = [] # Add ml-specific deps here like torch or transformers
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "tests*"]

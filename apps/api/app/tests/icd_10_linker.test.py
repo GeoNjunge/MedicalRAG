@@ -1,4 +1,4 @@
-from app.worker.ai_tasks.icd10_mapper import ICD10Linker
+from ml_core.src.ml_core.pipeline.icd10_mapper import ICD10Linker
 
 def test_linker_accuracy():
     linker = ICD10Linker()

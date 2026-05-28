@@ -3,7 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime, timezone
 import uuid
 
-from apps.api.app.database.base import Base
+from app.database.base import Base
 
 class Job(Base):
     __tablename__ = "jobs"
