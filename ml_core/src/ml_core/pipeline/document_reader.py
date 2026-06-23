@@ -29,7 +29,7 @@ converter = DocumentConverter()
 # model_name = "dmis-lab/biobert-base-cased-v1.1"
 model_name = str("ml_core/src/ml_core/models/cached_models/models--sentence-transformers--all-MiniLM-L6-v2/snapshots/c9745ed1d9f207416be6d2e6f8de32d1f16199bf")
 
-embeddings = HuggingFaceEmbeddings(model_name=model_name,
+embeddings = HuggingFaceEmbeddings(model_name=SENTENCE_TRANSFORMER_PATH,
                                     cache_folder=f"{MODELS_BASE_PATH}",
                                     model_kwargs={'device': 'cpu'})
 
@@ -70,7 +70,7 @@ def extract_text_with_pymupdf(file) -> str:
 @time_metrics()
 def extract_text_from_pdf(file):
     try:
-        text = extract_text_with_pymupdf(fileq)
+        text = extract_text_with_pymupdf(file)
     except Exception as e:
         logger.warning("Could not complete extraction using PyMuPDF", exc_info=e)
 
@@ -143,23 +143,23 @@ def embed_chunks_and_store_in_vector_db(all_splits):
 
     return vectorstore
 
-import json
-file_path = Path("samplePmedReport.pdf")
+# import json
+# file_path = Path("samplePmedReport.pdf")
 
-markdown = extract_text_from_pdf(file_path)
+# markdown = extract_text_from_pdf(file_path)
 
-chunks = chunk_text(markdown)
+# chunks = chunk_text(markdown)
 
-chunks = clean_and_normalize_text(chunks)
+# chunks = clean_and_normalize_text(chunks)
     
-entities = []
-Path("samplePmedReport_md.md").write_text(str(chunks))
+# entities = []
+# Path("samplePmedReport_md.md").write_text(str(chunks))
 
-for split in range(len(chunks)):
-    # print(f"chunk {split}\n {chunks[split]}")
-    content = chunks[split].page_content
+# for split in range(len(chunks)):
+#     # print(f"chunk {split}\n {chunks[split]}")
+#     content = chunks[split].page_content
 
-    entities.append(get_negative_entities(content))
+#     entities.append(get_negative_entities(content))
 
-Path("samplePmedReport_md.json").write_text(json.dumps(entities))
+# Path("samplePmedReport_md.json").write_text(json.dumps(entities))
     

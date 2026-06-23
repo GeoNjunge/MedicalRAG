@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import UploadFile
+from fastapi import Depends, UploadFile
 from typing import Optional
 from app.services.file_validation import validator
 from app.storage.s3 import uploader
@@ -9,6 +9,11 @@ from app.core.logger_setup import logger, CentralizedLogger
 from app.models.job import Job
 from app.queue.job_queue import queue
 from app.services.push_job_to_redis import push_job
+from app.worker.ai_pipeline import update_status
+from app.database.session import get_db
+import rq
+
+from app.worker.worker import redis_conn
 
 logger = CentralizedLogger.get_logger(__name__)
 
@@ -16,7 +21,7 @@ async def upload_file(file: UploadFile,
         patient_id: str,
         priority: int,
         model_version: Optional[str],
-        db: Session):
+        db: Session = Depends(get_db)):
     
     try:
         #Validator
@@ -26,6 +31,23 @@ async def upload_file(file: UploadFile,
         # Compute Hash
         file_hash = validator.compute_hash(file)
 
+        # check if file hash exists in any job
+        # hash_exists = db.query(Job).filter(Job.file_hash == str(file_hash)).first()
+
+        # if hash_exists:
+        #     result = {
+        #         "extracted_text": hash_exists.extracted_text,
+        #         "diseases_json": hash_exists.diseases_json,
+        #         "labs_json": hash_exists.labs_json,
+        #         "summary_text": hash_exists.summary_text,
+        #     }
+
+        #     job = rq.job.Job.fetch(hash_exists.id, redis_conn)
+
+        #     if job is None:
+        #         update_status(result, job)
+
+        #     return {"job_id": hash_exists.id, "job_status":"Complete", "message":"Job already completed"}
         # Upload to S3
         # result = await uploader.upload_file_to_s3(file, patient_id)
 

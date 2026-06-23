@@ -6,9 +6,10 @@ from app.database.session import get_db
 from app.services.upload_services import upload_file
 from app.core.logger_setup import logger, CentralizedLogger
 from app.worker.worker import redis_conn
-from rq.job import Job
+from app.models.job import Job
 import random
 import numpy as np
+import rq
 
 logger = CentralizedLogger.get_logger(__name__)
 
@@ -50,23 +51,34 @@ job_status = [
 ]
 
 
-
+db: Session = Depends(get_db)
 @router.get('/status/{job_id}')
 def poll_job_status(job_id):
     # job_counter = -1
 
     try:
-            job = Job.fetch(job_id, redis_conn)
-            job_status = job.meta.get('status')
-                  
-            if 'summary_text' in job_status: 
-                  return {  
-                            "status": "Completed",
-                            "diseases_json": job_status['diseases_json'],
-                            "labs_json": job_status['labs_json'],
-                            "summary_text": job_status['summary_text'],   
-                        }
-            # else:
+            job = rq.job.Job.fetch(job_id, redis_conn)
+
+            if job is not None:
+                job_status = job.meta.get('status')
+                    
+                if 'summary_text' in job_status: 
+                    return {  
+                                "status": "Completed",
+                                "diseases_json": job_status['diseases_json'],
+                                "labs_json": job_status['labs_json'],
+                                "summary_text": job_status['summary_text'],   
+                            }
+                
+            job = db.query(Job).filter(Job.id == str(job_id)).first()
+            if job is not None:
+                return {  
+                                    "status": job.status,
+                                    "diseases_json": job.diseases_json,
+                                    "labs_json": job.labs_json,
+                                    "summary_text": job.summary_text,   
+                                }
+                # else:
             return {
                 # "status": 200,
                "status": str(job_status),

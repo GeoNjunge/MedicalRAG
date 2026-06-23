@@ -4,9 +4,9 @@ from apps.api.app.core.logger_setup import time_metrics, CentralizedLogger
 
 logger = CentralizedLogger.get_logger("summarizer")
 
-client_url = config.OLLAMA_URL
+# client_url = config.OLLAMA_URL
 
-client = ollama.Client(host=client_url)
+# client = ollama.Client(host=client_url)
 
 prompt = '''
 Ill be provisioning you with an object consisting of patient data

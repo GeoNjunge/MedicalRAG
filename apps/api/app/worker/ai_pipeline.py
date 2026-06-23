@@ -6,16 +6,16 @@ from rq.job import Job
 from app.worker.worker import redis_conn
 import json
 
-from ml_core.src.ml_core.pipeline.document_reader import (
+from ml_core.pipeline.document_reader import (
     extract_text_from_pdf,
     embed_chunks_and_store_in_vector_db,
     chunk_text,
     clean_and_normalize_text,
 )
-from ml_core.src.ml_core.pipeline.disease_extractor import get_negative_entities
-from ml_core.src.ml_core.pipeline.icd10_mapper import ICD10Linker
-from ml_core.src.ml_core.pipeline.lab_extractor import extract_labs
-from ml_core.src.ml_core.pipeline.summarizer import summarize_content
+from ml_core.pipeline.disease_extractor import get_negative_entities
+from ml_core.pipeline.icd10_mapper import ICD10Linker
+from ml_core.pipeline.lab_extractor import extract_labs
+from ml_core.pipeline.summarizer import summarize_content
 logger = CentralizedLogger.get_logger(__name__)
 
 @time_metrics()
@@ -85,19 +85,19 @@ def run_ner_pipeline(file_content, job_id, original_filename):
         # return vector_store, retriever, cleaned_text
 
         # # Generating summary
-        # update_status('Generating summary', job)
-        # logger.info("Generating summary")
-        # summary_text = summarize_content(str({
-        #     # "extracted_text": extracted_text,
-        #     "diseases_json": diseases,
-        #     "labs_json": lab_results,
-        # }))
+        update_status('Generating summary', job)
+        logger.info("Generating summary")
+        summary_text = summarize_content(str({
+            # "extracted_text": extracted_text,
+            "diseases_json": diseases,
+            "labs_json": lab_results,
+        }))
 
         result = {
             "extracted_text": extracted_text,
             "diseases_json": diseases,
             "labs_json": lab_results,
-            "summary_text": "Patient has diabetes and sugar",
+            "summary_text": summary_text,
         }
 
         update_status(result, job)
