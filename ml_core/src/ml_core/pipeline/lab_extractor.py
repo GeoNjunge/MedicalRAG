@@ -4,9 +4,8 @@ import medspacy
 from medspacy.ner import TargetRule
 import json
 
-from ml_core.src.ml_core.pipeline.document_reader import chunk_text, clean_and_normalize_text, extract_text_from_pdf
-
-nlp = medspacy.load()
+nlp = medspacy.load(enable=["sentencizer", "context"])
+context = nlp.get_pipe("medspacy_context")
 target_matcher = nlp.get_pipe('medspacy_target_matcher')
 
 from spacy.matcher import PhraseMatcher
@@ -77,41 +76,92 @@ target_matcher.add(value_rule)
 target_matcher.add(additional_rules)
 
 
+# @time_metrics()
+# def extract_labs(chunks):
+#     """
+#     Extracts lab names and values with their units and tags and returns a list of the lab entities
+#     """
+#     results = []
+
+#     try:
+
+#         for chunk in chunks:
+#             doc = nlp(chunk.page_content)
+
+#             for ent in doc.ents:
+
+#                 if ent.label_ == "LAB":
+
+#                     window = doc[ent.end: ent.end + 10]
+
+#                     value = next((t.text for t in window if t.ent_type_ == "LAB_VALUE"), "N/A")
+#                     unit = 'N/A'
+
+#                     for token in window:
+#                         if token.ent_type_ == 'UNIT':
+#                             unit = [ent.text for ent in doc.ents if token.i >= ent.start and token.i < ent.end]
+#                             unit = unit[0] if unit else 'N/A'
+#                             break
+
+#                     flag = next((t.text for t in window if t.ent_type_ == "FLAG"), "NORMAL")
+
+#                     results.append({
+#                         'test': ent.text,
+#                         "value": value,
+#                         "unit": unit,
+#                         "status": flag
+#                     })
+
+#         final_report = {}
+#         for res in results:
+#             name = res['test'].upper().replace("SGPT", "ALT").strip()
+
+#             if name not in final_report or (final_report[name]['value'] == "N/A" and res['value'] != "N/A"):
+#                 final_report[name] = {
+#                     "test": name,
+#                     "value": res["value"],
+#                     "unit": res["unit"] if res["unit"] != "N/A" else "", # Clean N/A for UI
+#                     "status": res["status"]
+#                 }
+#         logger.info(f"Finished extracting labs")
+#         return json.dumps(list(final_report.values()), indent=2)
+#     except Exception as e:
+#         logger.error(f"Error extracting labs: {e}")
+#         raise
+
 @time_metrics()
-def extract_labs(chunks):
+def extract_labs_one_pass(doc):
     """
     Extracts lab names and values with their units and tags and returns a list of the lab entities
+    Uses the tokenized doc from extract diseases to extract them in a single pass
+    Aims to save tokenizer initialization overhead
     """
-    results = []
-
     try:
+        results = []
 
-        for chunk in chunks:
-            doc = nlp(chunk.page_content)
+        for ent in doc.ents:
 
-            for ent in doc.ents:
+            if ent.label_ == "LAB":
 
-                if ent.label_ == "LAB":
+                window = doc[ent.end: ent.end + 10]
 
-                    window = doc[ent.end: ent.end + 10]
+                value = next((t.text for t in window if t.ent_type_ == "LAB_VALUE"), "N/A")
+                unit = 'N/A'
 
-                    value = next((t.text for t in window if t.ent_type_ == "LAB_VALUE"), "N/A")
-                    unit = 'N/A'
-
-                    for token in window:
-                        if token.ent_type_ == 'UNIT':
+                for token in window:
+                    if token.ent_type_ == 'UNIT':
                             unit = [ent.text for ent in doc.ents if token.i >= ent.start and token.i < ent.end]
                             unit = unit[0] if unit else 'N/A'
                             break
 
-                    flag = next((t.text for t in window if t.ent_type_ == "FLAG"), "NORMAL")
+                flag = next((t.text for t in window if t.ent_type_ == "FLAG"), "NORMAL")
 
-                    results.append({
-                        'test': ent.text,
-                        "value": value,
-                        "unit": unit,
-                        "status": flag
-                    })
+                results.append({
+                    'test': ent.text,
+                    "value": value,
+                    "unit": unit,
+                    "status": flag
+                })
 
         final_report = {}
         for res in results:
