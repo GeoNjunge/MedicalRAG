@@ -41,3 +41,6 @@ bcrypt
 
 # --- Storage Utilities ---
 boto3
+
+-e ./apps
+-e ./ml_core
