@@ -1,66 +1,29 @@
 import re
-from pathlib import Path
-from langchain_experimental.text_splitter import SemanticChunker
 from langchain_text_splitters import MarkdownHeaderTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
-from docling.document_converter import DocumentConverter, PdfFormatOption
-from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import PdfPipelineOptions, RapidOcrOptions
 from apps.api.app.core.logger_setup import logger, CentralizedLogger, time_metrics
-import os
 import fitz
-from ml_core.config import SENTENCE_TRANSFORMER_PATH, MODELS_BASE_PATH
 
-os.environ["OMP_NUM_THREADS"] = "4"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["DOCLING_DEVICE"] = "cpu"
+from ml_core.pipeline.resources import get_resources
 
 logger = CentralizedLogger.get_logger(__name__)
 
-# Docling doc converter
-def _init_converter():
-    ocr_options = RapidOcrOptions()
-    ocr_options.backend = "openvino"
-    pipeline_options = PdfPipelineOptions()
-    pipeline_options.do_table_structure = False
-    pipeline_options.accelerator_options.device = "cpu"
-    pipeline_options.ocr_options = ocr_options
-    pipeline_options.do_ocr = False
-
-    return DocumentConverter(
-        format_options={
-            InputFormat.PDF: PdfFormatOption(
-                pipeline_options=pipeline_options
-            ),
-        }
-    )
-
-converter = _init_converter()
-
-# Embedding model
-# model_name = "dmis-lab/biobert-base-cased-v1.1"
-model_name = str("ml_core/src/ml_core/models/cached_models/models--sentence-transformers--all-MiniLM-L6-v2/snapshots/c9745ed1d9f207416be6d2e6f8de32d1f16199bf")
-
-embeddings = HuggingFaceEmbeddings(model_name=SENTENCE_TRANSFORMER_PATH,
-                                    cache_folder=f"{MODELS_BASE_PATH}",
-                                    model_kwargs={'device': 'cpu'})
 
 @time_metrics()
 def extract_text_from_pdf_with_docling(file) -> str:
     """
     Extracts text from PDF using Docling with rapidOCR
     """
+    converter = get_resources().converter
 
     try:
-       doc = converter.convert(file).document
-       mark_doc = doc.export_to_markdown()
-       
+        doc = converter.convert(file).document
+        mark_doc = doc.export_to_markdown()
     except Exception as e:
         logger.error(f"Failed to extract text from pdf: {e}")
-        raise 
+        raise
     return mark_doc
+
 
 @time_metrics()
 def extract_text_with_pymupdf(file) -> str:
@@ -73,12 +36,11 @@ def extract_text_with_pymupdf(file) -> str:
 
     for page_num in range(len(doc)):
         page = doc.load_page(page_num)
-
         page_text = page.get_text()
-
         text += page_text
 
     return text
+
 
 @time_metrics()
 def extract_text_from_pdf(file):
@@ -86,55 +48,35 @@ def extract_text_from_pdf(file):
         text = extract_text_with_pymupdf(file)
     except Exception as e:
         logger.warning("Could not complete extraction using PyMuPDF", exc_info=e)
-
         text = extract_text_from_pdf_with_docling(file)
 
     return text
 
+
 @time_metrics()
 def chunk_text(markdown_file):
     headers_to_split_on = [
-    ("##", "Header")]
-    # # markdown header splitter
+        ("#", "###", "####", "##", "Header")
+    ]
     splitter = MarkdownHeaderTextSplitter(
-       headers_to_split_on=headers_to_split_on,
+        headers_to_split_on=headers_to_split_on,
         strip_headers=False,
     )
-    # markdown header splitter
     all_splits = splitter.split_text(markdown_file)
-
-    # Semantic chunker
-    # splitter = SemanticChunker(
-    #         embeddings,
-    #         breakpoint_threshold_type="percentile",
-    #         breakpoint_threshold_amount=80,
-    # )
-
-    # all_splits = splitter.create_documents([markdown_file])
-
-    # splitter = RecursiveCharacterTextSplitter(
-    #    chunk_size=512,
-    #    chunk_overlap=200,
-    #    length_function=len,
-    #    is_separator_regex=False
-    # )
-
-    # all_splits = splitter.create_documents([markdown_file])
-
     return all_splits
+
 
 @time_metrics()
 def clean_and_normalize_text(all_splits):
     """
     Clean raw text extracted from PDF before PDF processing
     """
-
     for i in range(len(all_splits)):
-        if "Header" in all_splits[i].metadata and all_splits[i].metadata["Header"] == 'Comments':
+        if "Header" in all_splits[i].metadata and all_splits[i].metadata["Header"] == "Comments":
             all_splits[i].page_content = ""
 
         content = all_splits[i].page_content
-        cleaned = re.sub(r"\|", "",  content)
+        cleaned = re.sub(r"\|", "", content)
         cleaned = re.sub(r"-{2,}", "", cleaned)
         cleaned = re.sub(r"\\n", " ", cleaned)
         cleaned = re.sub(r" +", " ", cleaned)
@@ -143,19 +85,22 @@ def clean_and_normalize_text(all_splits):
 
     return all_splits
 
+
 def clean_unchunked_text(content):
-    cleaned = re.sub(r"\|", "",  content)
+    cleaned = re.sub(r"\|", "", content)
     cleaned = re.sub(r"-{2,}", "", cleaned)
     cleaned = re.sub(r"[\r\n]+", " ", cleaned)
     cleaned = re.sub(r"\s+", " ", cleaned)
     cleaned = cleaned.strip()
     return cleaned
 
+
 @time_metrics()
 def embed_chunks_and_store_in_vector_db(all_splits):
     """
     Embeds the Chunks generated by the Semantic Chunker. Maybe well reuse the ones created during chunking
     """
+    embeddings = get_resources().embeddings
     vectorstore = Chroma.from_documents(
         all_splits,
         embeddings,
@@ -163,34 +108,3 @@ def embed_chunks_and_store_in_vector_db(all_splits):
     )
 
     return vectorstore
-
-import json
-file_path = Path("samplePmedReport.pdf")
-
-markdown = extract_text_from_pdf_with_docling(file_path)
-chunked_text = chunk_text(markdown)
-cleaned_text = clean_and_normalize_text(chunked_text)
-    
-entities = []
-Path("samplePmedReport_md.md").write_text(str(cleaned_text))
-from ml_core.src.ml_core.pipeline.disease_extractor import get_negative_entities_and_get_labs_in_single_pass, get_negative_entities
-# diseases, labs = get_negative_entities_and_get_labs_in_single_pass(cleaned_text)
-# obj = {
-#     "diseases": diseases,
-#     "labs": labs
-# }
-# obj_json = json.dumps(obj)
-# Path("samplePmedReport_results.json").write_text(obj_json)
-
-# diseases_2 = get_negative_entities([cleaned_text])
-# Path("samplePmedReport_older.json").write_text(str(diseases_2))
-
-
-# for split in range(len(chunks)):
-#     # print(f"chunk {split}\n {chunks[split]}")
-#     content = chunks[split].page_content
-
-#     entities.append(get_negative_entities(content))
-
-# Path("samplePmedReport_md.json").write_text(json.dumps(entities))
-    

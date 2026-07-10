@@ -5,6 +5,7 @@ import tempfile, os
 from rq.job import Job
 from app.worker.worker import redis_conn
 import json
+from datetime import datetime, timezone
 
 from ml_core.pipeline.document_reader import (
     extract_text_from_pdf,
@@ -18,11 +19,46 @@ from ml_core.pipeline.lab_extractor import extract_labs
 from ml_core.pipeline.summarizer import summarize_content
 logger = CentralizedLogger.get_logger(__name__)
 
+from ml_core.pipeline.resources import ensure_initialized
+
+
+def _stage_from_status(status_text):
+    if isinstance(status_text, dict):
+        return "completed"
+
+    if not isinstance(status_text, str):
+        return "processing"
+
+    normalized = status_text.lower()
+    if "extracting text" in normalized:
+        return "extract_text"
+    if "chunking text" in normalized:
+        return "chunk_text"
+    if "cleaning" in normalized:
+        return "clean_text"
+    if "extracting diseases" in normalized:
+        return "extract_diseases"
+    if "extracting lab" in normalized:
+        return "extract_labs"
+    if "generating summary" in normalized:
+        return "summarize"
+    if "failed" in normalized:
+        return "failed"
+    if "started" in normalized:
+        return "started"
+    return "processing"
+
+
+def _publish_job_event(job_id, event_payload):
+    channel = f"job_events:{job_id}"
+    redis_conn.publish(channel, json.dumps(event_payload, default=str))
+
 @time_metrics()
 def run_ner_pipeline(file_content, job_id, original_filename):
     """
     Running NER pipeline
     """
+    ensure_initialized()
     job = Job.fetch(job_id, connection=redis_conn)
     update_status("Worker has started processing doc", job)
 
@@ -116,6 +152,23 @@ def update_status(status_text, job):
     """Updates the Redis job meta so the frontend can see it"""
     job.meta['status'] = status_text
     job.save_meta()
+    event_type = "progress"
+    if isinstance(status_text, dict):
+        event_type = "completed"
+    elif isinstance(status_text, str) and status_text.lower() == "failed":
+        event_type = "failed"
+
+    event_payload = {
+        "type": event_type,
+        "job_id": str(job.id),
+        "stage": _stage_from_status(status_text),
+        "status": status_text if not isinstance(status_text, dict) else "Completed",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    if isinstance(status_text, dict):
+        event_payload["result"] = status_text
+
+    _publish_job_event(job.id, event_payload)
     logger.info(f"Job {job.id} status: {status_text}")
 
 # from pathlib import Path

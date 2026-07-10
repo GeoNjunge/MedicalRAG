@@ -6,10 +6,10 @@ from app.database.session import get_db
 from app.services.upload_services import upload_file
 from app.core.logger_setup import logger, CentralizedLogger
 from app.worker.worker import redis_conn
-from app.models.job import Job
-import random
-import numpy as np
+import json
+import asyncio
 import rq
+from fastapi.responses import StreamingResponse
 
 logger = CentralizedLogger.get_logger(__name__)
 
@@ -41,119 +41,68 @@ async def upload_medical_file(
         logger.error(f"Upload API error: {e}")
         raise    
 
-job_status = [
-    'Extracting document text...',
-    'Running NLP tokenization...',
-    'Extracting named entities...',
-    'Identifying lab values...',
-    'Mapping to ICD-10 codes...',
-    'Generating clinical summary...',
-]
-
-
-db: Session = Depends(get_db)
-@router.get('/status/{job_id}')
-def poll_job_status(job_id):
-    # job_counter = -1
-
-    try:
+@router.get("/jobs/{job_id}/events")
+async def stream_job_events(job_id: str):
+    async def event_generator():
+        try:
             job = rq.job.Job.fetch(job_id, redis_conn)
+            initial_status = job.meta.get("status")
+            if initial_status:
+                if isinstance(initial_status, dict):
+                    initial_event = {
+                        "type": "completed",
+                        "job_id": str(job_id),
+                        "stage": "completed",
+                        "status": "Completed",
+                        "result": initial_status,
+                    }
+                    yield f"event: completed\ndata: {json.dumps(initial_event)}\n\n"
+                    return
+                initial_event = {
+                    "type": "progress",
+                    "job_id": str(job_id),
+                    "stage": "processing",
+                    "status": str(initial_status),
+                }
+                yield f"event: progress\ndata: {json.dumps(initial_event)}\n\n"
+        except Exception:
+            # Job may not exist yet; continue waiting for pubsub events.
+            pass
 
-            if job is not None:
-                job_status = job.meta.get('status')
-                    
-                if 'summary_text' in job_status: 
-                    return {  
-                                "status": "Completed",
-                                "diseases_json": job_status['diseases_json'],
-                                "labs_json": job_status['labs_json'],
-                                "summary_text": job_status['summary_text'],   
-                            }
-                
-            job = db.query(Job).filter(Job.id == str(job_id)).first()
-            if job is not None:
-                return {  
-                                    "status": job.status,
-                                    "diseases_json": job.diseases_json,
-                                    "labs_json": job.labs_json,
-                                    "summary_text": job.summary_text,   
-                                }
-                # else:
-            return {
-                # "status": 200,
-               "status": str(job_status),
-            }
-    # 
-        # return results
+        pubsub = redis_conn.pubsub()
+        channel = f"job_events:{job_id}"
+        pubsub.subscribe(channel)
 
-    except Exception as e:
-                logger.error(f"Error getting job status {e}")
-                return {
-                    "error": e
-                }, 404
-    
-sample_res =  {
-    "diseases_json": [
-        "chest pain",
-        "GERD",
-        "heart problems",
-        "HTN",
-        "hypertension",
-        "TAH",
-        "premature",
-        "CAD",
-        "uterine fibroids",
-        "peptic ulcer disease",
-        "rash",
-        "hives",
-        "headache",
-        "heart attack",
-        "Epigastric pain",
-        "lower back pain",
-        "Chest Pain Dyspnea",
-        "allergy",
-        "ASCVD",
-        "dyspnea",
-        "Lumbosacral back pain",
-        "angina pectoris",
-        "substernal chest pain",
-        "ischemic cardiac",
-        "coronary artery disease",
-        "unstable angina",
-        "Gastro-esophageal reflux disease",
-        "ischemic heart disease",
-        "left ventricular dysfunction",
-        "congestive heart failure",
-        "myocardial ischemia",
-        "abdominal bruit",
-        "ASCVD of the renal artery",
-        "renovascular hypertension",
-        "valvular heart disease",
-        "aortic stenosis",
-        "Epigastric discomfort",
-        "Lumbo-sacral back pain",
-        "Fibrocystic breast disease",
-        "Penicillin allergy",
-        "esophageal reflux disease",
-        "pulmonary or musculoskeletal pain",
-        "myocardial infarction",
-        "volume overload",
-        "wall motion abnormalities"
-    ],
-    "labs_json": [
-        {
-            "test": "BUN",
-            "value": "N/A",
-            "unit": "",
-            "status": "NORMAL"
-        },
-        {
-            "test": "CREATININE",
-            "value": "N/A",
-            "unit": "",
-            "status": "NORMAL"
-        }
-    ],
-    "summary_text": "The patient has cancer with a glucose level of 300 mg/l"
-}
-        
+        try:
+            while True:
+                message = pubsub.get_message(ignore_subscribe_messages=True)
+
+                if message and message.get("type") == "message":
+                    raw_data = message.get("data")
+                    if isinstance(raw_data, bytes):
+                        raw_data = raw_data.decode("utf-8")
+
+                    payload = json.loads(raw_data)
+                    event_type = payload.get("type", "progress")
+                    yield f"event: {event_type}\ndata: {json.dumps(payload)}\n\n"
+
+                    if event_type in {"completed", "failed"}:
+                        break
+                else:
+                    # Keep connection alive through proxies/load balancers.
+                    yield ": ping\n\n"
+                    await asyncio.sleep(1.0)
+        finally:
+            pubsub.unsubscribe(channel)
+            pubsub.close()
+
+    headers = {
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+    }
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers=headers,
+    )

@@ -13,6 +13,7 @@ class AppConfig(BaseSettings):
     """"
     Configuration class for the application. Loaded from .env
     """
+    APP_ENV: str = "dev"
     DATABASE_URL:str
     S3_BUCKET_URL: str
     S3_BUCKET_NAME: str
@@ -20,6 +21,8 @@ class AppConfig(BaseSettings):
     AWS_SECRET_KEY: str
     S3_REGION_NAME :str
     OLLAMA_URL: str
+    GROQ_API_KEY: Optional[str] = None
+    GROQ_MODEL: Optional[str] = None
 
     model_config = SettingsConfigDict(
           env_file='.env',

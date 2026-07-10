@@ -1,2 +1,2 @@
-PYTHONPATH=/home/ubuntu/projects/MedicalRAG ../../venv/bin/python3 -m uvicorn app.main:app --reload
-PYTHONPATH=/home/ubuntu/projects/MedicalRAG ../../venv/bin/python3 -m app.worker.worker
+PYTHONPATH=/home/ubuntu/projects/MedicalRAG:/home/ubuntu/projects/MedicalRAG/ml_core/src ../../venv/bin/python3 -m uvicorn app.main:app --reload
+PYTHONPATH=/home/ubuntu/projects/MedicalRAG:/home/ubuntu/projects/MedicalRAG/ml_core/src ../../venv/bin/python3 -m app.worker.worker

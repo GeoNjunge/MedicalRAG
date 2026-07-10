@@ -1,14 +1,17 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
+import asyncio
 from app.api.v1.routes.upload import router as upload_router
 from app.core.logger_setup import CentralizedLogger
 from fastapi.middleware.cors import CORSMiddleware
 from app.database.init_db import init_db
+from ml_core.pipeline.resources import initialize_pipeline_resources
 
-# from app.database.init_db import init_db
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    resources = await asyncio.to_thread(initialize_pipeline_resources)
+    app.state.pipeline_resources = resources
     yield
 
 logger = CentralizedLogger.get_logger(__name__)

@@ -73,7 +73,7 @@
     }
   </div>
 
-  <!-- Footer: poll counter -->
+  <!-- Footer: stream counter -->
   <div class="flex items-center gap-2 mt-3 pt-3" style="border-top:1px solid #2a2e38;">
     <span
       class="w-2 h-2 rounded-full"
@@ -83,10 +83,10 @@
         : '0 0 0 3px rgba(232,112,58,0.2)'">
     </span>
     <span class="font-mono text-[11px]" style="color:#555b6b;">
-      {{ done ? 'Complete ✓' : 'Polling every 2s' }}
+      {{ done ? 'Complete ✓' : 'Live SSE stream' }}
     </span>
     <span class="font-mono text-[11px] ml-auto" style="color:#555b6b;">
-      {{ pollCount }} {{ pollCount === 1 ? 'poll' : 'polls' }}
+      {{ pollCount }} {{ pollCount === 1 ? 'event' : 'events' }}
     </span>
   </div>
 

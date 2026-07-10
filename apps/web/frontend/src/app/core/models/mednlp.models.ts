@@ -19,6 +19,33 @@ export function isAnalysisResult(r: PollResponse): r is AnalysisResult {
   return (r as AnalysisResult).summary_text != null;
 }
 
+export interface JobProgressEvent {
+  type: 'progress';
+  job_id: string;
+  stage: string;
+  status: string;
+  timestamp: string;
+}
+
+export interface JobCompletedEvent {
+  type: 'completed';
+  job_id: string;
+  stage: string;
+  status: string;
+  timestamp: string;
+  result: AnalysisResult;
+}
+
+export interface JobFailedEvent {
+  type: 'failed';
+  job_id: string;
+  stage: string;
+  status: string;
+  timestamp: string;
+}
+
+export type JobEvent = JobProgressEvent | JobCompletedEvent | JobFailedEvent;
+
 // ─── Domain ──────────────────────────────────────────────────────
 export interface Disease {
   name:       string;
