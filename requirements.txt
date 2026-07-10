@@ -32,7 +32,10 @@ python-multipart
 # --- Database & Caching Core (Include if actively imported) ---
 asyncpg
 psycopg-binary
+SQLAlchemy
+alembic
 redis
+rq
 loguru
 bcrypt
 
