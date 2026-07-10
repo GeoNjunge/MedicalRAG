@@ -57,11 +57,8 @@ docling-ibm-models==3.11.0
 docling-parse==5.5.0
 docstring_parser==0.18.0
 durationpy==0.10
-en_core_sci_md @ https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_md-0.5.4.tar.gz#sha256=7c8fc52542dd1452ffce00b045c1298e2c185b7cf84793f8e0ec941987c09808
-en_ner_bc5cdr_md @ https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_ner_bc5cdr_md-0.5.4.tar.gz#sha256=ffc73130a710edf851206199720cb2c744a043e032f5da6ba4bb36863deca778
-et_xmlfile==2.0.0
-etelemetry==0.3.1
-execnet==2.1.2
+en_core_sci_md 
+en_ner_bc5cdr_md 
 executing==2.2.1
 Faker==40.8.0
 fakeredis==2.34.1
