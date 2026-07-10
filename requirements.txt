@@ -35,3 +35,6 @@ psycopg-binary
 redis
 loguru
 bcrypt
+
+# --- Storage Utilities ---
+boto3
