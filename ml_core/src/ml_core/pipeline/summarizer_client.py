@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Protocol
 
 from groq import Groq
-from llama_cpp import Llama
 
 from ml_core.pipeline.settings import DEFAULT_GROQ_MODEL
 
@@ -15,6 +14,8 @@ class SummarizerClient(Protocol):
 
 class LocalLlamaSummarizer:
     def __init__(self, model_path: str):
+        from llama_cpp import Llama
+
         self._client = Llama(
             model_path=model_path,
             n_ctx=2048,

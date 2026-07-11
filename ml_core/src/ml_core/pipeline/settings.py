@@ -10,7 +10,7 @@ DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 
 
 def get_app_env() -> str:
-    return os.getenv("APP_ENV", "prod").strip().lower()
+    return os.getenv("APP_ENV", "dev").strip().lower()
 
 
 def is_production() -> bool:

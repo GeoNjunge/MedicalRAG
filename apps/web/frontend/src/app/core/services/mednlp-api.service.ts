@@ -2,10 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { JobResponse, JobEvent } from '../models/mednlp.models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class MednlpApiService {
-  private base = 'http://127.0.0.1:8000/api/v1';   // ← swap to your real API base URL
+  private base = environment.apiBaseUrl;
   private readonly maxReconnectAttempts = 5;
   private readonly reconnectBaseDelayMs = 1000;
   private readonly reconnectMaxDelayMs = 10000;

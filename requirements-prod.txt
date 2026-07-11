@@ -1,0 +1,24 @@
+# MedicalRAG production dependencies (major packages only).
+# Transitive deps are pulled in automatically.
+# Install from repo root: pip install -r requirements-prod.txt
+
+-e ./apps
+-e ./ml_core
+
+# API server
+fastapi
+uvicorn[standard]
+pydantic-settings
+python-dotenv
+python-multipart
+sqlalchemy
+
+# File handling & storage
+boto3
+fleep
+pypdf
+PyMuPDF
+
+# Production pipeline (PyMuPDF + LangChain chunking + Groq LLM)
+langchain-text-splitters
+groq

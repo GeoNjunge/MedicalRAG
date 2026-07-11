@@ -7,13 +7,8 @@ from app.storage.s3 import uploader
 from sqlalchemy.orm import Session
 from app.core.logger_setup import logger, CentralizedLogger
 from app.models.job import Job
-from app.queue.job_queue import queue
-from app.services.push_job_to_redis import push_job
-from app.worker.ai_pipeline import update_status
+from app.core.config import is_production
 from app.database.session import get_db
-import rq
-
-from app.worker.worker import redis_conn
 
 logger = CentralizedLogger.get_logger(__name__)
 
@@ -31,28 +26,6 @@ async def upload_file(file: UploadFile,
         # Compute Hash
         file_hash = validator.compute_hash(file)
 
-        # check if file hash exists in any job
-        # hash_exists = db.query(Job).filter(Job.file_hash == str(file_hash)).first()
-
-        # if hash_exists:
-        #     result = {
-        #         "extracted_text": hash_exists.extracted_text,
-        #         "diseases_json": hash_exists.diseases_json,
-        #         "labs_json": hash_exists.labs_json,
-        #         "summary_text": hash_exists.summary_text,
-        #     }
-
-        #     job = rq.job.Job.fetch(hash_exists.id, redis_conn)
-
-        #     if job is None:
-        #         update_status(result, job)
-
-        #     return {"job_id": hash_exists.id, "job_status":"Complete", "message":"Job already completed"}
-        # Upload to S3
-        # result = await uploader.upload_file_to_s3(file, patient_id)
-
-        # Well change this to be save job to in memory 
-        # Well also need key for uniqueness
         unique_key = uploader.get_s3_key(file.filename, patient_id)
         file_path = Path(f"files/{unique_key}")
 
@@ -77,8 +50,6 @@ async def upload_file(file: UploadFile,
         # Save
         db.add(job)
         db.commit()
-        # 1. Store the ID as a plain string immediately
-        # This avoids issues if refresh() hangs
         job_id_str = str(job.id)
         
         try:
@@ -86,10 +57,18 @@ async def upload_file(file: UploadFile,
             logger.info(f"Job refreshed. ID: {job_id_str}")
         except Exception as e:
             logger.warning(f"Refresh failed but continuing: {e}")
-        # Push job_id to queue
-        push_job(job.id, job.file_path)
 
-        # Return 
+        if is_production():
+            from app.worker.prod_tasks import schedule_prod_job
+
+            schedule_prod_job(job.id, job.file_path)
+            logger.info(f"Scheduled production pipeline for job {job_id_str}")
+        else:
+            from app.services.push_job_to_redis import push_job
+
+            push_job(job.id, job.file_path)
+            logger.info(f"Enqueued development pipeline for job {job_id_str}")
+
         return {"job_id": job.id, "job_status":job.status, "message":"Job Created Successfully"}
 
     except Exception as error:

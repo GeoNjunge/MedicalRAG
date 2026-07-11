@@ -1,0 +1,40 @@
+# MedicalRAG local development dependencies (includes production stack).
+# Install from repo root: pip install -r requirements-dev.txt
+
+-r requirements-prod.txt
+
+# Local LLM inference
+llama-cpp-python
+
+# Heavy NLP / document pipeline
+spacy==3.7.5
+blis==0.7.11
+Cython<3.0.0
+en_core_sci_md @ https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_md-0.5.4.tar.gz#sha256=7c8fc52542dd1452ffce00b045c1298e2c185b7cf84793f8e0ec941987c09808
+en_ner_bc5cdr_md @ https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_ner_bc5cdr_md-0.5.4.tar.gz#sha256=ffc73130a710edf851206199720cb2c744a043e032f5da6ba4bb36863deca778
+medspacy
+docling
+langchain
+langchain-community
+langchain-huggingface
+sentence-transformers
+numpy==1.26.4
+opencv-python-headless>=4.9.0.80,<4.10.1.0
+torch==2.10.0
+torchvision==0.25.0
+
+# Background job worker (development only; prod runs in-process)
+redis
+rq
+
+# Dev & test utilities
+pytest
+pytest-asyncio
+pytest-mock
+fakeredis
+moto
+deepeval
+chromadb
+typer>=0.12.5,<0.22.0
+loguru
+bcrypt

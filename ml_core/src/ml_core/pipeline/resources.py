@@ -4,25 +4,10 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
-from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import PdfPipelineOptions, RapidOcrOptions
-from docling.document_converter import DocumentConverter, PdfFormatOption
-from langchain_huggingface import HuggingFaceEmbeddings
-from loguru import logger as pyrush_logger
-from spacy.tokens import Span
-
-from ml_core.config import MODELS_BASE_PATH, SENTENCE_TRANSFORMER_PATH
-from ml_core.pipeline.disease_model import (
-    DiseaseModel,
-    build_dev_disease_model,
-    build_prod_disease_model,
-)
-from ml_core.pipeline.icd10_mapper import ICD10Linker
 from ml_core.pipeline.settings import (
     DEFAULT_GROQ_MODEL,
-    PROD_EMBEDDING_MODEL,
     configure_hf_hub_mode,
     get_app_env,
     is_production,
@@ -32,12 +17,6 @@ from ml_core.pipeline.summarizer_client import GroqSummarizer, LocalLlamaSummari
 os.environ.setdefault("OMP_NUM_THREADS", "4")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("DOCLING_DEVICE", "cpu")
-configure_hf_hub_mode()
-
-pyrush_logger.disable("PyRuSH")
-
-if not Span.has_extension("confidence"):
-    Span.set_extension("confidence", default=0.0)
 
 LLAMA_MODELS = {
     "qwen_0.5b": "/home/ubuntu/.ollama/models/blobs/sha256-c5396e06af294bd101b30dce59131a76d2b773e76950acc870eda801d3ab0515",
@@ -49,14 +28,14 @@ LLAMA_MODELS = {
 @dataclass
 class PipelineResources:
     app_env: str
-    nlp: object
-    context: object
-    sectionizer: object
-    disease_model: DiseaseModel
-    icd10_linker: ICD10Linker
-    converter: DocumentConverter
-    embeddings: HuggingFaceEmbeddings
     summarizer_client: SummarizerClient
+    nlp: Any = None
+    context: Any = None
+    sectionizer: Any = None
+    disease_model: Any = None
+    icd10_linker: Any = None
+    converter: Any = None
+    embeddings: Any = None
 
 
 _resources: Optional[PipelineResources] = None
@@ -69,6 +48,8 @@ def is_initialized() -> bool:
 def ensure_initialized() -> PipelineResources:
     """Initialize pipeline resources if they have not been loaded yet."""
     if _resources is None:
+        if is_production():
+            return initialize_prod_resources()
         return initialize_pipeline_resources()
     return _resources
 
@@ -87,11 +68,41 @@ def set_resources(resources: PipelineResources) -> None:
     _resources = resources
 
 
+def _init_summarizer_client() -> SummarizerClient:
+    if is_production():
+        groq_api_key = os.getenv("GROQ_API_KEY", "")
+        groq_model = os.getenv("GROQ_MODEL", DEFAULT_GROQ_MODEL)
+        return GroqSummarizer(api_key=groq_api_key, model=groq_model)
+
+    return LocalLlamaSummarizer(model_path=LLAMA_MODELS["qwen_1.5b"])
+
+
+def initialize_prod_resources() -> PipelineResources:
+    """Load only lightweight cloud resources for production deployments."""
+    global _resources
+    if _resources is not None:
+        return _resources
+
+    resources = PipelineResources(
+        app_env=get_app_env(),
+        summarizer_client=_init_summarizer_client(),
+    )
+    _resources = resources
+    return resources
+
+
 def _init_medspacy_nlp():
     import medspacy
     from medspacy.section_detection import SectionRule
+    from loguru import logger as pyrush_logger
+    from spacy.tokens import Span
 
     from ml_core.pipeline.lab_extractor import configure_lab_matcher
+
+    pyrush_logger.disable("PyRuSH")
+
+    if not Span.has_extension("confidence"):
+        Span.set_extension("confidence", default=0.0)
 
     nlp = medspacy.load(enable=["sentencizer", "context"])
     context = nlp.get_pipe("medspacy_context")
@@ -123,14 +134,19 @@ def _init_medspacy_nlp():
     return nlp, context, sectionizer
 
 
-def _init_disease_model() -> DiseaseModel:
+def _init_disease_model():
+    from ml_core.config import MODELS_BASE_PATH
+    from ml_core.pipeline.disease_model import build_dev_disease_model
+
     cache_dir = str(MODELS_BASE_PATH / "cached_models")
-    if is_production():
-        return build_prod_disease_model(cache_dir=cache_dir)
     return build_dev_disease_model()
 
 
-def _init_converter() -> DocumentConverter:
+def _init_converter():
+    from docling.datamodel.base_models import InputFormat
+    from docling.datamodel.pipeline_options import PdfPipelineOptions, RapidOcrOptions
+    from docling.document_converter import DocumentConverter, PdfFormatOption
+
     ocr_options = RapidOcrOptions()
     ocr_options.backend = "openvino"
     pipeline_options = PdfPipelineOptions()
@@ -146,15 +162,12 @@ def _init_converter() -> DocumentConverter:
     )
 
 
-def _init_embeddings() -> HuggingFaceEmbeddings:
-    cache_dir = str(MODELS_BASE_PATH / "cached_models")
-    if is_production():
-        return HuggingFaceEmbeddings(
-            model_name=PROD_EMBEDDING_MODEL,
-            cache_folder=cache_dir,
-            model_kwargs={"device": "cpu"},
-        )
+def _init_embeddings():
+    from langchain_huggingface import HuggingFaceEmbeddings
 
+    from ml_core.config import MODELS_BASE_PATH, SENTENCE_TRANSFORMER_PATH
+
+    cache_dir = str(MODELS_BASE_PATH / "cached_models")
     return HuggingFaceEmbeddings(
         model_name=SENTENCE_TRANSFORMER_PATH,
         cache_folder=cache_dir,
@@ -162,22 +175,18 @@ def _init_embeddings() -> HuggingFaceEmbeddings:
     )
 
 
-def _init_summarizer_client() -> SummarizerClient:
-    if is_production():
-        groq_api_key = os.getenv("GROQ_API_KEY", "")
-        groq_model = os.getenv("GROQ_MODEL", DEFAULT_GROQ_MODEL)
-        return GroqSummarizer(api_key=groq_api_key, model=groq_model)
-
-    return LocalLlamaSummarizer(model_path=LLAMA_MODELS["qwen_1.5b"])
-
-
 def initialize_pipeline_resources() -> PipelineResources:
-    """Load all heavy pipeline libraries once per process."""
+    """Load all heavy pipeline libraries once per process (development only)."""
     global _resources
     if _resources is not None:
         return _resources
 
+    if is_production():
+        return initialize_prod_resources()
+
     configure_hf_hub_mode()
+    from ml_core.pipeline.icd10_mapper import ICD10Linker
+
     nlp, context, sectionizer = _init_medspacy_nlp()
 
     resources = PipelineResources(
