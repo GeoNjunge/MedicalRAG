@@ -2,6 +2,8 @@
 
 Core machine learning and NLP pipeline powering the medical document analysis system.
 
+> Architecture guides: [Local LLM](../docs/LOCAL_ARCHITECTURE.md) · [Production](../docs/PROD_ARCHITECTURE.md) · [Pipeline stages](../docs/ARCHITECTURE.md)
+
 This package contains the full AI processing layer used by the backend workers and research scripts, including:
 
 * medical document parsing
@@ -185,9 +187,7 @@ Uses a CSV knowledge base and fuzzy matcher to map the names to descriptions and
 
 `summarizer.py`
 
-Consumes structured medical context and generates concise patient summaries using lightweight local LLM inference.
-
-*Uses llama.cpp instead of the normal Ollama API for speed optimization*
+Consumes structured medical context and generates concise patient summaries using lightweight local LLM inference via **llama.cpp** (not the Ollama HTTP API — faster on CPU).
 
 Designed for:
 
@@ -231,14 +231,7 @@ Offline caching is used to:
 * avoid repeated downloads
 * improve worker stability
 
-*Note my current model name is a snapshot in ml_core/src/ml_core/pipeline/document_reader.py*
-    ```
-    ml_core/src/ml_core/models/cached_models/models--sentence-transformers--all-MiniLM-L6-v2/snapshots/c9745ed1d9f207416be6d2e6f8de32d1f16199bf
-    ```
-
-    You can download the model files from this HuggingFace repository or just let the HuggingFace library cache the model and then you can change path to use the snapshot
-
-*
+The embedding model path is configured in `ml_core/src/ml_core/config.py`. On first run, HuggingFace will download and cache `all-MiniLM-L6-v2` automatically. You can also point `SENTENCE_TRANSFORMER_PATH` at an existing snapshot under `cached_models/`.
 
 ---
 

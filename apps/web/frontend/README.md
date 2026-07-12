@@ -1,142 +1,122 @@
-# MedNLP – Medical Intelligence Platform
-### Angular 18 · Tailwind CSS v3 · Standalone Components · Signals
+# MedicalRAG Frontend
+
+Angular 18 web app for uploading medical PDFs, watching live processing progress, and viewing extracted diseases, lab results, and summaries.
 
 ---
 
-## Project Structure
+## Features
 
-```
-src/app/
-├── core/
-│   ├── models/
-│   │   └── mednlp.models.ts          ← All TypeScript interfaces
-│   └── services/
-│       ├── mednlp-api.service.ts     ← Upload + polling (HttpClient)
-│       ├── elasticsearch.service.ts  ← ES search (mock → real)
-│       └── chat.service.ts           ← Chat state + response generation
-│
-├── shared/
-│   ├── components/
-│   │   └── navbar.component.ts/html  ← Sticky nav with router links
-│   └── pipes/
-│       └── highlight.pipe.ts         ← Highlights search term in results
-│
-├── features/
-│   ├── analyze/components/
-│   │   ├── analyze-page.component    ← Page orchestrator
-│   │   ├── upload-panel.component    ← File picker + drag-drop
-│   │   ├── job-status.component      ← Polling progress steps
-│   │   ├── results-summary.component ← Clinical summary card
-│   │   ├── results-diseases.component← Disease tags with ICD-10
-│   │   └── results-labs.component    ← Lab table with flags
-│   │
-│   ├── search/components/
-│   │   ├── search-page.component     ← Page orchestrator
-│   │   ├── search-bar.component      ← Query + filters + quick chips
-│   │   └── search-results.component  ← ES result cards with highlight
-│   │
-│   └── chat/components/
-│       └── chat-modal.component      ← Slide-up AI chat panel
-│
-├── app.component.ts   ← Root shell (navbar + outlet + chat modal)
-├── app.routes.ts      ← Lazy-loaded routes
-└── app.config.ts      ← provideRouter + provideHttpClient
-```
+- **Analyze** — upload a PDF, track pipeline stages in real time, view structured results
+- **Search** — patient record search (Elasticsearch integration scaffolded)
+- **Chat** — AI chat panel (UI scaffold)
 
 ---
 
-## Quick Start
+## Quick start
 
 ```bash
-cd /apps/web/frontend
+cd apps/web/frontend
 npm install
-npm start              # http://localhost:4200
+npm start
+```
+
+Open `http://localhost:4200`.
+
+`npm start` runs the Angular dev server with hot reload. It also auto-generates `src/environments/environment.ts` from your `.env` file before starting.
+
+---
+
+## Environment configuration
+
+Create a `.env` file in this directory:
+
+```env
+# Local development
+API_BASE_URL=http://localhost:8000/api/v1
+FRONTEND_URL=http://localhost:4200
+
+# Production example
+# API_BASE_URL=https://your-backend.onrender.com/api/v1
+# FRONTEND_URL=https://your-frontend.vercel.app
+```
+
+Do not edit `src/environments/environment.ts` directly — it is regenerated on every `npm start` and `npm run build` by `scripts/generate-environment.mjs`.
+
+---
+
+## Available scripts
+
+| Command | What it does |
+|---------|--------------|
+| `npm start` | Dev server on port 4200 |
+| `npm run build` | Development build |
+| `npm run build:prod` | Production build (output in `dist/mednlp/`) |
+| `npm run serve:prod` | Serve the production build on port 10000 |
+| `npm test` | Run unit tests |
+
+> **Note:** The script is `serve:prod`, not `serve:rpd`.
+
+---
+
+## How it talks to the backend
+
+The frontend is already wired to the real API — no mock stubs to replace.
+
+1. **Upload** — `MednlpApiService.uploadDocument()` sends the PDF to `POST /api/v1/upload` and receives a `job_id`.
+2. **Live progress** — `streamJob()` opens an SSE connection to `/api/v1/jobs/{job_id}/events` and listens for `progress`, `completed`, and `failed` events.
+3. **Results** — when a `completed` event arrives, the analyze page displays diseases, labs, and the summary.
+
+Set `API_BASE_URL` in `.env` to point at your backend. For local dev, that is usually `http://localhost:8000/api/v1`.
+
+---
+
+## Project structure
+
+```text
+src/app/
+├── core/
+│   ├── models/mednlp.models.ts       # TypeScript interfaces
+│   └── services/
+│       ├── mednlp-api.service.ts     # Upload + SSE streaming
+│       ├── elasticsearch.service.ts  # Search (mock data for now)
+│       └── chat.service.ts           # Chat state
+├── features/
+│   ├── analyze/                      # Upload + results page
+│   ├── search/                       # Patient search page
+│   └── chat/                         # Chat modal
+├── shared/                             # Navbar, pipes
+├── app.routes.ts                     # Lazy-loaded routes
+└── app.config.ts                     # Router + HttpClient providers
 ```
 
 ---
 
-## Wiring to Your Real Backend
+## Production build
 
-### 1 — Upload & Get Job ID
-
-In `analyze-page.component.ts`, replace the simulated block:
-
-```typescript
-// REAL — replace the simulated block in startUpload()
-this.api.uploadDocument(file, this.patientId(), this.docType()).subscribe({
-  next: res => { this.jobId.set(res.job_id); this._startPolling(res.job_id); },
-  error: err => { this.uploading.set(false); console.error(err); }
-});
+```bash
+# Set production URLs in .env first
+npm run build:prod
+npm run serve:prod
 ```
 
-Your backend must return:
-```json
-{ "job_id": "JOB-XXXXXXXX" }
-```
-
-### 2 — Poll for Status / Results
-
-`_startPolling()` is already wired to `mednlp-api.service.ts → pollJob()`.  
-Your backend must return one of:
-
-**While processing:**
-```json
-{ "status": "Extracting entities" }
-```
-
-**When done:**
-```json
-{
-  "diseases_json": [{ "name": "...", "icd10": "...", "confidence": 0.97 }],
-  "labs_json":     [{ "test": "...", "value": "...", "unit": "...",
-                      "reference": "...", "status": "abnormal" }],
-  "summary_text":  "The patient has..."
-}
-```
-
-The type guard `isAnalysisResult()` in `mednlp.models.ts` distinguishes between the two automatically.
-
-### 3 — Elasticsearch Search
-
-In `elasticsearch.service.ts`, uncomment the real HTTP call and remove the mock:
-
-```typescript
-search(params: EsSearchParams): Observable<EsPatientRecord[]> {
-  const p = new HttpParams()
-    .set('q',        params.query)
-    .set('doc_type', params.docType)
-    .set('range',    params.dateRange);
-  return this.http.get<EsPatientRecord[]>(`${this.base}/search`, { params: p });
-}
-```
-
-### 4 — API Base URL
-
-Change `private base = '/api'` in each service to your real backend URL,  
-or configure a proxy in `proxy.conf.json`:
-
-```json
-{
-  "/api": {
-    "target": "http://localhost:8000",
-    "secure": false,
-    "changeOrigin": true
-  }
-}
-```
-
-Add to `angular.json` serve options: `"proxyConfig": "proxy.conf.json"`
+Or deploy the `dist/mednlp/` folder to any static host (Vercel, Netlify, etc.).
 
 ---
 
-## Tech Stack
+## Tech stack
 
-| Layer        | Choice                                 |
-|--------------|----------------------------------------|
-| Framework    | Angular 18 (standalone components)     |
-| State        | Angular Signals (`signal()`)           |
-| Styling      | Tailwind CSS v3 (inline class + style) |
-| HTTP         | Angular `HttpClient`                   |
-| Routing      | Angular Router (lazy-loaded)           |
-| Fonts        | Syne · DM Sans · DM Mono (Google)     |
-| Animations   | CSS keyframes via Tailwind config      |
+| Layer | Choice |
+|-------|--------|
+| Framework | Angular 18 (standalone components) |
+| State | Angular Signals |
+| Styling | Tailwind CSS v3 |
+| HTTP | Angular HttpClient + EventSource (SSE) |
+| Fonts | Syne, DM Sans, DM Mono |
+
+---
+
+## Related docs
+
+- [Setup guide](../../docs/SETUP.md)
+- [Production architecture](../../docs/PROD_ARCHITECTURE.md)
+- [API README](../../apps/api/README.md)
