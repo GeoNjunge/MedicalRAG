@@ -7,7 +7,7 @@ For deployment-specific details, see the dedicated guides:
 - **[Production architecture](./PROD_ARCHITECTURE.md)** — cloud pipeline with Groq
 - **[Local LLM architecture](./LOCAL_ARCHITECTURE.md)** — offline models and Redis worker
 
-![Architecture diagram](./architecture_eval.png)
+![Architecture diagram](./architecture.png)
 
 ---
 
