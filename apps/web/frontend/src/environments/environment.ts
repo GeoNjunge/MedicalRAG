@@ -3,6 +3,6 @@
 
 export const environment = {
   production: false,
-  apiBaseUrl: 'http://localhost:8000/api/v1',
-  frontendUrl: 'http://localhost:4200',
+  apiBaseUrl: 'https://medicalrag-kz18.onrender.com/',
+  frontendUrl: 'https://medical-rag-dli1-rose.vercel.app/',
 };
