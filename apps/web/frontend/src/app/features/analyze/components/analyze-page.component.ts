@@ -1,8 +1,9 @@
-import { Component, inject, signal, OnDestroy } from '@angular/core';
+import { Component, inject, signal, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { MednlpApiService } from '../../../core/services/mednlp-api.service';
 import { ChatService } from '../../../core/services/chat.service';
+import { DemoModeService } from '../../../core/services/demo-mode.service';
 import {
   AnalysisResult, Disease, JobEvent, JobStep, LabResult
 } from '../../../core/models/mednlp.models';
@@ -11,6 +12,7 @@ import { JobStatusComponent }    from './job-status.component';
 import { ResultsSummaryComponent } from './results-summary.component';
 import { ResultsDiseasesComponent } from './results-diseases.component';
 import { ResultsLabsComponent }   from './results-labs.component';
+import { ResultsTokenMetricsComponent } from './results-token-metrics.component';
 
 @Component({
   selector: 'app-analyze-page',
@@ -22,12 +24,14 @@ import { ResultsLabsComponent }   from './results-labs.component';
     ResultsSummaryComponent,
     ResultsDiseasesComponent,
     ResultsLabsComponent,
+    ResultsTokenMetricsComponent,
   ],
   templateUrl: './analyze-page.component.html',
 })
-export class AnalyzePageComponent implements OnDestroy {
+export class AnalyzePageComponent implements OnInit, OnDestroy {
   private api  = inject(MednlpApiService);
   private chat = inject(ChatService);
+  private demo = inject(DemoModeService);
   private streamSub?: Subscription;
 
   selectedFile   = signal<File | null>(null);
@@ -48,9 +52,17 @@ export class AnalyzePageComponent implements OnDestroy {
 
   results = signal<AnalysisResult | null>(null);
 
+  ngOnInit(): void {
+    const demoResult = this.demo.activeResult();
+    if (demoResult && this.demo.isDemoMode()) {
+      this._loadDemoResult(demoResult);
+    }
+  }
+
   onFileSelected(file: File) { this.selectedFile.set(file); }
 
   startUpload() {
+    this.demo.clear();
     const file = this.selectedFile();
     if (!file) return;
 
@@ -108,6 +120,18 @@ export class AnalyzePageComponent implements OnDestroy {
     this.uploading.set(false);
   }
 
+  private _loadDemoResult(result: AnalysisResult): void {
+    this._setStep('upload', 'done');
+    this._setStep('processing', 'done');
+    this._setStep('done', 'done');
+    this.pollDone.set(true);
+    this.uploading.set(false);
+    this.jobId.set('DEMO-CACHED');
+    this.nlpStatusText.set('Loaded cached demo output');
+    this.results.set(result);
+    this.chat.notifyNewResults(result);
+  }
+
   private _onJobComplete(res?: AnalysisResult) {
     this._setStep('upload', 'done');
     this._setStep('processing', 'done');
@@ -160,4 +184,10 @@ const MOCK_RESULT: AnalysisResult = {
     { test:'ALT',              value:'42',  unit:'U/L',             reference:'7–56',    status:'normal'   },
   ],
   summary_text: 'The patient is a 58-year-old male presenting with poorly controlled Type 2 Diabetes Mellitus (HbA1c 9.8%) complicated by Chronic Kidney Disease Stage 3 (eGFR 38 mL/min/1.73m²) and peripheral neuropathy. Significant hyperglycemia is present with a fasting glucose of 300 mg/dL. Concurrent hypertension and hyperlipidemia (LDL 178 mg/dL) represent additional major cardiovascular risk factors. Evidence of early diabetic retinopathy was noted. Renal function indices suggest progressive nephropathy; urgent nephrology referral and RAAS inhibitor therapy optimization are warranted.',
+  token_metrics: {
+    whole_document_tokens: 842,
+    summarizer_input_tokens: 186,
+    tokens_saved: 656,
+    reduction_percent: 77.91,
+  },
 };

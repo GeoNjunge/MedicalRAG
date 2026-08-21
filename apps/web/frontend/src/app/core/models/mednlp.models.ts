@@ -7,10 +7,18 @@ export interface PollStatusResponse {
   status: string;         // e.g. "Extracting entities"
 }
 
+export interface TokenMetrics {
+  whole_document_tokens: number;
+  summarizer_input_tokens: number;
+  tokens_saved: number;
+  reduction_percent: number;
+}
+
 export interface AnalysisResult {
   diseases_json: Disease[];
   labs_json:     LabResult[];
   summary_text:  string;
+  token_metrics?: TokenMetrics;
 }
 
 export type PollResponse = PollStatusResponse | AnalysisResult;

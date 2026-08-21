@@ -16,7 +16,9 @@ from ml_core.pipeline.document_reader import (
 from ml_core.pipeline.disease_extractor import get_negative_entities
 from ml_core.pipeline.icd10_mapper import ICD10Linker
 from ml_core.pipeline.lab_extractor import extract_labs
+from ml_core.pipeline.prompts import SUMMARY_PROMPT
 from ml_core.pipeline.summarizer import summarize_content
+from ml_core.pipeline.token_metrics import build_summarizer_token_metrics
 logger = CentralizedLogger.get_logger(__name__)
 
 from ml_core.pipeline.resources import ensure_initialized
@@ -123,17 +125,20 @@ def run_ner_pipeline(file_content, job_id, original_filename):
         # # Generating summary
         update_status('Generating summary', job)
         logger.info("Generating summary")
-        summary_text = summarize_content(str({
-            # "extracted_text": extracted_text,
-            "diseases_json": diseases,
-            "labs_json": lab_results,
-        }))
+        summary_text = summarize_content(diseases, lab_results)
+        token_metrics = build_summarizer_token_metrics(
+            extracted_text,
+            diseases,
+            lab_results,
+            system_prompt=SUMMARY_PROMPT,
+        )
 
         result = {
             "extracted_text": extracted_text,
             "diseases_json": diseases,
             "labs_json": lab_results,
             "summary_text": summary_text,
+            "token_metrics": token_metrics,
         }
 
         update_status(result, job)

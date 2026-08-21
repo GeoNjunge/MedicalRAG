@@ -1,6 +1,6 @@
 # Local LLM Architecture
 
-This document explains how MedicalRAG runs on your own machine in **development mode** — with local models, a full NLP pipeline, and no cloud LLM required for summarization.
+This document explains how MedicalRAG runs on your own machine in **development mode**  - with local models, a full NLP pipeline, and no cloud LLM required for summarization.
 
 ---
 
@@ -115,7 +115,7 @@ Model paths are configured in `ml_core/src/ml_core/pipeline/resources.py`:
 | `qwen_1.5b` | Qwen 2.5 1.5B | **Default** for local dev |
 | `qwen_3b` | Qwen 2.5 3B | Better quality, slower |
 
-The default summarizer uses `qwen_1.5b`. These paths point to Ollama's on-disk model blobs — so you typically install models through Ollama first, then llama.cpp reads the same files.
+The default summarizer uses `qwen_1.5b`. These paths point to Ollama's on-disk model blobs  - so you typically install models through Ollama first, then llama.cpp reads the same files.
 
 ### Why llama.cpp instead of the Ollama API?
 
@@ -153,7 +153,7 @@ HuggingFace downloads are cached locally. In dev mode, `HF_HUB_OFFLINE=1` is set
 - Python 3.11+
 - Node.js 18+ (for the frontend)
 - Redis (for the job queue)
-- Ollama (to download Qwen model files) — [install guide](https://ollama.com)
+- Ollama (to download Qwen model files)  - [install guide](https://ollama.com)
 - Enough RAM (~8 GB minimum; 16 GB recommended when all models are loaded)
 
 ### 1. Install Python dependencies
@@ -185,17 +185,17 @@ DATABASE_URL=sqlite:///docs.db
 OLLAMA_URL=http://localhost:11434
 ```
 
-AWS/S3 fields can stay empty for local runs — files are saved under `files/` on disk.
+AWS/S3 fields can stay empty for local runs  - files are saved under `files/` on disk.
 
 ### 4. Start services (three terminals)
 
-**Terminal 1 — Redis**
+**Terminal 1  - Redis**
 
 ```bash
 redis-server
 ```
 
-**Terminal 2 — RQ worker**
+**Terminal 2  - RQ worker**
 
 ```bash
 cd apps/api
@@ -203,14 +203,14 @@ source venv/bin/activate   # if using a venv
 python -m app.worker.worker
 ```
 
-**Terminal 3 — API**
+**Terminal 3  - API**
 
 ```bash
 cd apps/api
 uvicorn app.main:app --reload
 ```
 
-**Terminal 4 — Frontend (optional)**
+**Terminal 4  - Frontend (optional)**
 
 ```bash
 cd apps/web/frontend
@@ -268,7 +268,7 @@ Open `http://localhost:4200`, upload a PDF, and watch progress update live.
 
 **Pipeline is slow on first run**
 
-- Expected — models load once. Subsequent jobs reuse warmed models.
+- Expected  - models load once. Subsequent jobs reuse warmed models.
 - See [Metrics](./METRICS.md) for cold vs warm timings.
 
 **Out of memory**
@@ -280,7 +280,7 @@ Open `http://localhost:4200`, upload a PDF, and watch progress update live.
 
 ## Related docs
 
-- [Production architecture](./PROD_ARCHITECTURE.md) — cloud deployment with Groq
-- [Setup guide](./SETUP.md) — step-by-step install
-- [Architecture overview](./ARCHITECTURE.md) — pipeline stage details
-- [ML Core README](../ml_core/README.md) — deeper component reference
+- [Production architecture](./PROD_ARCHITECTURE.md)  - cloud deployment with Groq
+- [Setup guide](./SETUP.md)  - step-by-step install
+- [Architecture overview](./ARCHITECTURE.md)  - pipeline stage details
+- [ML Core README](../ml_core/README.md)  - deeper component reference

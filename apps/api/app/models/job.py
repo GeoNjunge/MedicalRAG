@@ -39,6 +39,7 @@ class Job(Base):
     diseases_json: Mapped[dict] = mapped_column(JSON, nullable=True)
     labs_json: Mapped[dict] = mapped_column(JSON, nullable=True)
     summary_text: Mapped[str] = mapped_column(Text, nullable=True)
+    token_metrics_json: Mapped[dict] = mapped_column(JSON, nullable=True)
 
     # Errors
     error_message: Mapped[str] = mapped_column(Text, nullable=True)

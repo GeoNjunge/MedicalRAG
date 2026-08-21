@@ -1,6 +1,9 @@
 import pandas as pd
 from rapidfuzz import process, fuzz
 from pathlib import Path
+from apps.api.app.core.logger_setup import CentralizedLogger, time_metrics
+
+logger = CentralizedLogger.get_logger(__name__)
 
 class ICD10Linker:
     _instance = None
@@ -24,6 +27,7 @@ class ICD10Linker:
     def __init__(self):
         pass
 
+    # @time_metrics(retries=0)
     def link(cls, query_text, threshold=80):
         if query_text in cls._instance.linked_data:
             return cls.linked_data[query_text]
