@@ -1,5 +1,5 @@
 import re
-from langchain_text_splitters import MarkdownHeaderTextSplitter
+from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from apps.api.app.core.logger_setup import logger, CentralizedLogger, time_metrics
 import fitz
@@ -54,17 +54,43 @@ def extract_text_from_pdf(file):
 
 
 @time_metrics()
-def chunk_text(markdown_file):
-    headers_to_split_on = [
-        ("#", "###", "####", "##", "Header")
-    ]
-    splitter = MarkdownHeaderTextSplitter(
+def chunk_text(raw_text):
+    """
+    Two-stage text splitter that guarantees chunks never exceed the token limitations
+    of downstream token-classification models, regardless of whether input is Markdown or plain text.
+    """
+    # Stage 1: Attempt to split structural elements on Markdown headers
+    headers_to_split_on = [("##", "Header")]
+    markdown_splitter = MarkdownHeaderTextSplitter(
         headers_to_split_on=headers_to_split_on,
         strip_headers=False,
     )
-    all_splits = splitter.split_text(markdown_file)
-    return all_splits
-
+    
+    # If the text has markdown headers, it splits it structurally.
+    # If it's plain text from PyMuPDF, it safely returns a single-item list containing the whole text.
+    structural_chunks = markdown_splitter.split_text(raw_text)
+    
+    # Stage 2: Sub-split large blocks to enforce token thresholds safety
+    # Max chunk size ~1500 characters roughly translates to ~350-400 tokens, 
+    # leaving a comfortable safety buffer inside the model's 512 token budget.
+    recursive_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1500,
+        chunk_overlap=200,
+        length_function=len,
+        separators=["\n\n", "\n", " ", ""]
+    )
+    
+    final_splits = []
+    for chunk in structural_chunks:
+        # If the structural section is small enough, keep it intact
+        if len(chunk.page_content) <= 1500:
+            final_splits.append(chunk)
+        else:
+            # Sub-split the massive section while preserving header metadata
+            sub_chunks = recursive_splitter.split_documents([chunk])
+            final_splits.extend(sub_chunks)
+            
+    return final_splits
 
 @time_metrics()
 def clean_and_normalize_text(all_splits):

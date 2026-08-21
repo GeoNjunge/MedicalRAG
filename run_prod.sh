@@ -7,7 +7,7 @@ API_DIR="${ROOT}/apps/api"
 cd "${API_DIR}"
 
 export APP_ENV=production
-export PYTHONPATH="${API_DIR}:${ROOT}/ml_core/src"
+export PYTHONPATH="${ROOT}:${API_DIR}:${ROOT}/ml_core/src"
 
 if [[ -f "${ROOT}/.env" ]]; then
   set -a
@@ -33,7 +33,7 @@ if [[ ! -x "${PYTHON}" ]]; then
   PYTHON=python3
 fi
 
-HOST="${HOST:-0.0.0.0}"
+HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8000}"
 WORKERS="${WORKERS:-1}"
 

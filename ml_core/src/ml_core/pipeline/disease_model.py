@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Any, Protocol
 
 import spacy
+import torch
+from torchao.quantization import Int8DynamicActivationInt8WeightConfig, quantize_
 from transformers import AutoModelForTokenClassification, AutoTokenizer, pipeline
 
 from ml_core.models import DISEASES_MODEL_PATH
@@ -82,6 +84,9 @@ def build_dev_disease_model() -> DevDiseaseModel:
     tokenizer.truncation_side = "right"
 
     model = AutoModelForTokenClassification.from_pretrained(DISEASES_MODEL_PATH)
+
+    quantize_(model, Int8DynamicActivationInt8WeightConfig())
+
     ner_pipeline = pipeline(
         "token-classification",
         model=model,
@@ -89,6 +94,7 @@ def build_dev_disease_model() -> DevDiseaseModel:
         aggregation_strategy="simple",
         model_kwargs={"truncation": True, "max_length": 512},
     )
+
     return DevDiseaseModel(ner_pipeline)
 
 

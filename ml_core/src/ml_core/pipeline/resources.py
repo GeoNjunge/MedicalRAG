@@ -18,10 +18,27 @@ os.environ.setdefault("OMP_NUM_THREADS", "4")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("DOCLING_DEVICE", "cpu")
 
+# ==================== CRITICAL SPACHY/CONFECTION VALIDATION PATCH ====================
+# Force confection to load early and patch its schema check to prevent NoneType crash
+try:
+    import confection
+    _orig_validate = confection._registry._validate_promise_args
+    
+    def _patched_validate(filled, schema, func_name, parent):
+        if func_name == "medspacy_pyrush" and "max_sentence_length" in filled:
+            if filled["max_sentence_length"] is None:
+                filled["max_sentence_length"] = 0  # Replaces None with valid integer
+        return _orig_validate(filled, schema, func_name, parent)
+        
+    confection._registry._validate_promise_args = _patched_validate
+except Exception:
+    pass
+# =====================================================================================
+
 LLAMA_MODELS = {
-    "qwen_0.5b": "/home/ubuntu/.ollama/models/blobs/sha256-c5396e06af294bd101b30dce59131a76d2b773e76950acc870eda801d3ab0515",
+    # "qwen_0.5b": "/home/ubuntu/.ollama/models/blobs/sha256-c5396e06af294bd101b30dce59131a76d2b773e76950acc870eda801d3ab0515",
     "qwen_1.5b": "/home/ubuntu/.ollama/models/blobs/sha256-183715c435899236895da3869489cc30ac241476b4971a20285b1a462818a5b4",
-    "qwen_3b": "/home/ubuntu/.ollama/models/blobs/sha256-5ee4f07cdb9beadbbb293e85803c569b01bd37ed059d2715faa7bb405f31caa6",
+    # "qwen_3b": "/home/ubuntu/.ollama/models/blobs/sha256-5ee4f07cdb9beadbbb293e85803c569b01bd37ed059d2715faa7bb405f31caa6",
 }
 
 
@@ -104,7 +121,9 @@ def _init_medspacy_nlp():
     if not Span.has_extension("confidence"):
         Span.set_extension("confidence", default=0.0)
 
+    # The top patch ensures this load call will no longer raise a ConfigValidationError
     nlp = medspacy.load(enable=["sentencizer", "context"])
+    
     context = nlp.get_pipe("medspacy_context")
     configure_lab_matcher(nlp)
 

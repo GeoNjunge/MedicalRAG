@@ -1,0 +1,36 @@
+{
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "python.defaultInterpreterPath": "/home/ubuntu/projects/MedicalRAG/venv/bin/python3",
+    "python.analysis.maxMemory": 1024,
+    "python.analysis.indexing": false,
+    "json.maxItemsComputed": 1000,
+    "python.analysis.exclude": [
+        "**/.*",
+        "**/node_modules",
+        "**/.venv",
+        "**/env",
+        "**/venv",
+        "**/.git",
+        "**/__pycache__",
+        "**/data/**",         
+        "**/chroma/**",       
+        "**/faiss/**",        
+        "**/*.json"           
+    ],
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/node_modules/**": true,
+        "**/.venv/**": true,
+        "**/venv/**": true,
+        "**/package-lock.json": true,
+        "**/*.sqlite*": true,
+        "**/*.db*": true,
+        "**/data/**": true    
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/package-lock.json": true,
+        "**/.venv": true,
+        "**/venv": true
+    }
+}

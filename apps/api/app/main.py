@@ -11,11 +11,11 @@ from ml_core.pipeline.resources import initialize_pipeline_resources, initialize
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    if is_production():
-        resources = await asyncio.to_thread(initialize_prod_resources)
-    else:
-        resources = await asyncio.to_thread(initialize_pipeline_resources)
-    app.state.pipeline_resources = resources
+    # if is_production():
+    #     resources = await asyncio.to_thread(initialize_prod_resources)
+    # else:
+        # resources = await asyncio.to_thread(initialize_pipeline_resources)
+    # app.state.pipeline_resources = resources
     yield
 
 logger = CentralizedLogger.get_logger(__name__)

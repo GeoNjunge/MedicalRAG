@@ -18,7 +18,7 @@ class LocalLlamaSummarizer:
 
         self._client = Llama(
             model_path=model_path,
-            n_ctx=2048,
+            n_ctx=4096,
             n_threads=2,
             chat_format="qwen",
             verbose=False,
