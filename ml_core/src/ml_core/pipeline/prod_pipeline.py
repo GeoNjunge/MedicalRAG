@@ -13,56 +13,12 @@ from typing import Any
 import fitz
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 
+from ml_core.pipeline.prompts import ENTITY_EXTRACTION_PROMPT, SUMMARY_PROMPT
 from ml_core.pipeline.settings import DEFAULT_GROQ_MODEL
 from ml_core.pipeline.summarizer_client import GroqSummarizer
+from ml_core.pipeline.text_utils import strip_markdown
+from ml_core.pipeline.token_metrics import build_summarizer_payload, build_summarizer_token_metrics
 
-ENTITY_EXTRACTION_PROMPT = """You are a clinical NLP assistant. Extract diseases/conditions and laboratory results from the provided medical document text.
-
-Return ONLY valid JSON with this exact structure (no markdown fences):
-{
-  "diseases": [
-    {"name": "condition name", "icd10": "optional ICD-10 code or empty string", "confidence": 0.0}
-  ],
-  "labs": [
-    {"test": "test name", "value": "numeric or text value", "unit": "unit or empty string", "status": "normal or abnormal or unknown"}
-  ]
-}
-
-Rules:
-- Include only entities explicitly mentioned in the text.
-- Exclude negated findings (e.g. "no diabetes").
-- For labs, capture test name, value, unit, and whether the result appears normal or abnormal.
-- Use confidence between 0.0 and 1.0 based on how clearly the condition is stated.
-- If none found, return empty arrays."""
-
-SUMMARY_PROMPT = """You will receive an object with patient diseases and lab results.
-
-Write a concise clinical summary in plain text only. Use complete sentences in one or two short paragraphs.
-
-Cover:
-- Key clinical findings
-- Diseases and their severity
-- Laboratory results (test names, values, units, reference ranges)
-- Any mismatches or notable patterns
-
-Rules:
-- Do NOT use markdown (no headers, bold, italics, bullet lists, or code fences).
-- Do NOT use numbered or bulleted lists.
-- Do not add information that is not in the given input."""
-
-
-def strip_markdown(text: str) -> str:
-    """Remove common markdown formatting from LLM output."""
-    cleaned = text.strip()
-    cleaned = re.sub(r"^#{1,6}\s+", "", cleaned, flags=re.MULTILINE)
-    cleaned = re.sub(r"\*\*([^*]+)\*\*", r"\1", cleaned)
-    cleaned = re.sub(r"\*([^*]+)\*", r"\1", cleaned)
-    cleaned = re.sub(r"^[-*+]\s+", "", cleaned, flags=re.MULTILINE)
-    cleaned = re.sub(r"^\d+\.\s+", "", cleaned, flags=re.MULTILINE)
-    cleaned = re.sub(r"```.*?```", "", cleaned, flags=re.DOTALL)
-    cleaned = re.sub(r"`([^`]+)`", r"\1", cleaned)
-    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
-    return cleaned.strip()
 
 
 def _get_groq_client() -> GroqSummarizer:
@@ -157,8 +113,9 @@ def extract_entities_with_groq(text: str, groq_client: GroqSummarizer) -> dict[s
     return _parse_json_response(response)
 
 
-def summarize_with_groq(patient_data: dict, groq_client: GroqSummarizer) -> str:
-    raw = groq_client.summarize(SUMMARY_PROMPT, json.dumps(patient_data))
+def summarize_with_groq(diseases: list[dict], labs: list[dict], groq_client: GroqSummarizer) -> str:
+    payload = build_summarizer_payload(diseases, labs)
+    raw = groq_client.summarize(SUMMARY_PROMPT, payload)
     return strip_markdown(raw)
 
 
@@ -194,9 +151,12 @@ def run_prod_pipeline(
         lab_results = entities["labs"]
 
         on_status("Generating summary")
-        summary_text = summarize_with_groq(
-            {"diseases_json": diseases, "labs_json": lab_results},
-            groq_client,
+        summary_text = summarize_with_groq(diseases, lab_results, groq_client)
+        token_metrics = build_summarizer_token_metrics(
+            extracted_text,
+            diseases,
+            lab_results,
+            system_prompt=SUMMARY_PROMPT,
         )
 
         result = {
@@ -204,6 +164,7 @@ def run_prod_pipeline(
             "diseases_json": diseases,
             "labs_json": lab_results,
             "summary_text": summary_text,
+            "token_metrics": token_metrics,
         }
         on_status(result)
         return result

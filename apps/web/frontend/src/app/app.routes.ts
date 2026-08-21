@@ -1,7 +1,12 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
-  { path: '',        redirectTo: 'analyze', pathMatch: 'full' },
+  {
+    path: '',
+    loadComponent: () =>
+      import('./features/landing/components/landing-page.component')
+        .then(m => m.LandingPageComponent),
+  },
   {
     path: 'analyze',
     loadComponent: () =>
@@ -14,5 +19,5 @@ export const routes: Routes = [
       import('./features/search/components/search-page.component')
         .then(m => m.SearchPageComponent),
   },
-  { path: '**', redirectTo: 'analyze' },
+  { path: '**', redirectTo: '' },
 ];

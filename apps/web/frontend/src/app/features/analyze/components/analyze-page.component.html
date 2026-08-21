@@ -66,6 +66,12 @@
       }
 
       @if (results()) {
+        @if (results()!.token_metrics) {
+          <app-results-token-metrics
+            [metrics]="results()!.token_metrics!">
+          </app-results-token-metrics>
+        }
+
         <app-results-summary
           [summaryText]="results()!.summary_text"
           (openChat)="openChat()">

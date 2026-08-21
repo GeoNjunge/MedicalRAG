@@ -109,6 +109,7 @@ def process_ai_job(job_id: str, file_path: str):
         job.extracted_text = result["extracted_text"]
         job.labs_json = result["labs_json"]
         job.summary_text = result["summary_text"]
+        job.token_metrics_json = result.get("token_metrics")
 
         # Change job status to complete
         job.status = "completed"

@@ -3,6 +3,12 @@ import json
 from medspacy.ner import TargetRule
 
 from ml_core.pipeline.resources import get_resources
+from ml_core.pipeline.sliding_window import (
+    DEFAULT_WINDOW_OVERLAP,
+    DEFAULT_WINDOW_SIZE,
+    LAB_TOKEN_WINDOW,
+    iter_sliding_windows,
+)
 
 clinical_rules = [
     TargetRule("Glucose", category="LAB", 
@@ -19,10 +25,13 @@ clinical_rules = [
     TargetRule("WBC", category="LAB", pattern=[{"LOWER": "wbc"}, {"LOWER": "count", "OP": "?"}]),
     TargetRule("HGB", category="LAB", pattern=[{"LOWER": {"IN": ["hgb", "hemoglobin"]}}]),
     TargetRule("PLT", category="LAB", pattern=[{"LOWER": {"IN": ["plt", "platelets"]}}]),
+    
+    # FIX 1: Enforce that "total" MUST be explicitly accompanied by cholesterol keys or variants
     TargetRule("Total Cholesterol", category="LAB", 
-               pattern=[{"TEXT": ">", "OP": "?"}, {"LOWER": {"IN": ["total", "total_chol", "total-chol"]}}, {"LOWER": "cholesterol", "OP": "?"}]),
-    TargetRule("ALT", category="LAB", 
-               pattern=[{"LOWER": {"IN": ["alt", "sgpt"]}}, {"ORTH": "(", "OP": "?"}, {"LOWER": "sgpt", "OP": "?"}, {"ORTH": ")", "OP": "?"}]),
+               pattern=[{"TEXT": ">", "OP": "?"}, {"LOWER": {"IN": ["total_chol", "total-chol"]}}]),
+    TargetRule("Total Cholesterol", category="LAB", 
+               pattern=[{"TEXT": ">", "OP": "?"}, {"LOWER": "total"}, {"LOWER": "cholesterol"}]),
+               
     TargetRule("LDL", category="LAB", 
                pattern=[{"TEXT": ">", "OP": "?"}, {"LOWER": "ldl"}, {"ORTH": "(", "OP": "?"}, {"LOWER": "calculated", "OP": "?"}, {"ORTH": ")", "OP": "?"}]),
     TargetRule("HDL", category="LAB", pattern=[{"TEXT": ">", "OP": "?"}, {"LOWER": "hdl"}])
@@ -43,6 +52,8 @@ additional_rules = [
                pattern=[{"LOWER": {"REGEX": r"^([!❗h|l]|high|low|abn|critical|borderline|hemolyzed|abnormal).*$"}}])
 ]
 
+# Exclusion strings to catch surgical/anatomical false positives leaking into lookahead frames
+SURGICAL_EXCLUSIONS = {"hysterectomy", "oophorectomy", "bunionectomy", "mastectomy", "appendix", "surgical"}
 
 def configure_lab_matcher(nlp):
     target_matcher = nlp.get_pipe("medspacy_target_matcher")
@@ -52,53 +63,125 @@ def configure_lab_matcher(nlp):
     return nlp
 
 
+def _token_window_end(doc, token_index: int, size: int = LAB_TOKEN_WINDOW) -> int:
+    return min(token_index + size, len(doc))
+
+
+def _find_value_in_window(doc, start_index: int) -> str:
+    end = _token_window_end(doc, start_index)
+    for token in doc[start_index:end]:
+        if token.ent_type_ == "LAB_VALUE":
+            return token.text
+    return "N/A"
+
+
+def _find_unit_in_window(doc, start_index: int) -> str:
+    end = _token_window_end(doc, start_index)
+    for token in doc[start_index:end]:
+        if token.ent_type_ == "UNIT":
+            return token.text
+    return ""
+
+
+def _find_flag_in_window(doc, start_index: int) -> str:
+    end = _token_window_end(doc, start_index)
+    for token in doc[start_index:end]:
+        if token.ent_type_ == "FLAG":
+            return token.text
+        # Safety Gate: If a lookahead window steps directly into a surgical history string, invalidate it
+        if token.text.lower() in SURGICAL_EXCLUSIONS:
+            return "EXCLUDE"
+    return "NORMAL"
+
+
+def _parse_lab_entities_from_doc(doc) -> list[dict]:
+    """Extract lab rows from a medSpaCy doc using fixed-size token windows (O(n))."""
+    results = []
+
+    for ent in doc.ents:
+        if ent.label_ != "LAB":
+            continue
+
+        # Check the context of the sentence containing the target entity
+        sentence_text = ent.sent.text.lower()
+        if any(exclusion in sentence_text for exclusion in SURGICAL_EXCLUSIONS):
+            continue  # Drop execution tracking for this ent completely
+
+        window_start = ent.end
+        status_flag = _find_flag_in_window(doc, window_start)
+        
+        if status_flag == "EXCLUDE":
+            continue
+
+        results.append(
+            {
+                "test": ent.text,
+                "value": _find_value_in_window(doc, window_start),
+                "unit": _find_unit_in_window(doc, window_start),
+                "status": status_flag,
+            }
+        )
+
+    return results
+
+
+def _merge_lab_results(results: list[dict]) -> dict[str, dict]:
+    final_report: dict[str, dict] = {}
+
+    for res in results:
+        name = res["test"].upper().replace("SGPT", "ALT").strip()
+
+        # Extra safety check: Ensure the word isn't just a hanging structural 'TOTAL'
+        if name == "TOTAL":
+            continue
+
+        if name not in final_report or (
+            final_report[name]["value"] == "N/A" and res["value"] != "N/A"
+        ):
+            final_report[name] = {
+                "test": name,
+                "value": res["value"],
+                "unit": res["unit"] if res["unit"] else "",
+                "status": res["status"],
+            }
+
+    return final_report
+
+
+def _extract_labs_from_text(
+    text: str,
+    nlp,
+    *,
+    window_size: int = DEFAULT_WINDOW_SIZE,
+    overlap: int = DEFAULT_WINDOW_OVERLAP,
+) -> list[dict]:
+    merged: dict[str, dict] = {}
+
+    for _, window_text in iter_sliding_windows(text, window_size=window_size, overlap=overlap):
+        doc = nlp(window_text)
+        window_results = _parse_lab_entities_from_doc(doc)
+        merged.update(_merge_lab_results(window_results))
+
+    return list(merged.values())
+
+
 @time_metrics()
 def extract_labs(chunks):
     """
-    Extracts lab names and values with their units and tags and returns a list of the lab entities
+    Extract lab names and values using medSpaCy over sliding text windows.
     """
     nlp = get_resources().nlp
-    results = []
 
     try:
+        merged: dict[str, dict] = {}
+
         for chunk in chunks:
-            doc = nlp(chunk.page_content)
+            text = chunk.page_content if hasattr(chunk, "page_content") else str(chunk)
+            for lab in _extract_labs_from_text(text, nlp):
+                merged.update(_merge_lab_results([lab]))
 
-            for ent in doc.ents:
-                if ent.label_ == "LAB":
-                    window = doc[ent.end: ent.end + 10]
-
-                    value = next((t.text for t in window if t.ent_type_ == "LAB_VALUE"), "N/A")
-                    unit = "N/A"
-
-                    for token in window:
-                        if token.ent_type_ == "UNIT":
-                            unit = [ent.text for ent in doc.ents if token.i >= ent.start and token.i < ent.end]
-                            unit = unit[0] if unit else "N/A"
-                            break
-
-                    flag = next((t.text for t in window if t.ent_type_ == "FLAG"), "NORMAL")
-
-                    results.append({
-                        "test": ent.text,
-                        "value": value,
-                        "unit": unit,
-                        "status": flag
-                    })
-
-        final_report = {}
-        for res in results:
-            name = res["test"].upper().replace("SGPT", "ALT").strip()
-
-            if name not in final_report or (final_report[name]["value"] == "N/A" and res["value"] != "N/A"):
-                final_report[name] = {
-                    "test": name,
-                    "value": res["value"],
-                    "unit": res["unit"] if res["unit"] != "N/A" else "",
-                    "status": res["status"]
-                }
         logger.info("Finished extracting labs")
-        return json.dumps(list(final_report.values()), indent=2)
+        return json.dumps(list(merged.values()), indent=2)
     except Exception as e:
         logger.error(f"Error extracting labs: {e}")
         raise
@@ -107,46 +190,11 @@ def extract_labs(chunks):
 @time_metrics()
 def extract_labs_one_pass(doc):
     """
-    Extracts lab names and values with their units and tags and returns a list of the lab entities
-    Uses the tokenized doc from extract diseases to extract them in a single pass
-    Aims to save tokenizer initialization overhead
+    Extract labs from an already-tokenized doc (single pass, O(n) window lookups).
     """
     try:
-        results = []
-
-        for ent in doc.ents:
-            if ent.label_ == "LAB":
-                window = doc[ent.end: ent.end + 10]
-
-                value = next((t.text for t in window if t.ent_type_ == "LAB_VALUE"), "N/A")
-                unit = "N/A"
-
-                for token in window:
-                    if token.ent_type_ == "UNIT":
-                        unit = [ent.text for ent in doc.ents if token.i >= ent.start and token.i < ent.end]
-                        unit = unit[0] if unit else "N/A"
-                        break
-
-                flag = next((t.text for t in window if t.ent_type_ == "FLAG"), "NORMAL")
-
-                results.append({
-                    "test": ent.text,
-                    "value": value,
-                    "unit": unit,
-                    "status": flag
-                })
-
-        final_report = {}
-        for res in results:
-            name = res["test"].upper().replace("SGPT", "ALT").strip()
-
-            if name not in final_report or (final_report[name]["value"] == "N/A" and res["value"] != "N/A"):
-                final_report[name] = {
-                    "test": name,
-                    "value": res["value"],
-                    "unit": res["unit"] if res["unit"] != "N/A" else "",
-                    "status": res["status"]
-                }
+        results = _parse_lab_entities_from_doc(doc)
+        final_report = _merge_lab_results(results)
         logger.info("Finished extracting labs")
         return json.dumps(list(final_report.values()), indent=2)
     except Exception as e:

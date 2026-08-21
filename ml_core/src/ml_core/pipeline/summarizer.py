@@ -1,30 +1,20 @@
-from apps.api.app.core.logger_setup import time_metrics, CentralizedLogger
-from ml_core.pipeline.prod_pipeline import strip_markdown
+import logging
+
+from ml_core.pipeline.prompts import SUMMARY_PROMPT
 from ml_core.pipeline.resources import get_resources
+from ml_core.pipeline.text_utils import strip_markdown
+from ml_core.pipeline.token_metrics import build_summarizer_payload
 
-logger = CentralizedLogger.get_logger("summarizer")
-
-prompt = """
-You will receive an object with patient diseases and lab results.
-
-Write a concise clinical summary in plain text only. Use complete sentences in one or two short paragraphs.
-
-Cover key clinical findings, diseases and severity, laboratory results (test names, values, units, reference ranges), and any mismatches.
-
-Rules:
-- Do NOT use markdown (no headers, bold, italics, bullet lists, or code fences).
-- Do NOT use numbered or bulleted lists.
-- Do not add information that is not in the given input.
-"""
+logger = logging.getLogger(__name__)
 
 
-@time_metrics()
-def summarize_content(patient_data):
+def summarize_content(diseases, labs):
     try:
         summarizer = get_resources().summarizer_client
-        raw = summarizer.summarize(prompt, patient_data)
+        payload = build_summarizer_payload(diseases, labs)
+        raw = summarizer.summarize(SUMMARY_PROMPT, payload)
         return strip_markdown(raw)
 
     except Exception as e:
-        logger.error("Error occurred during summrization: {e}")
+        logger.error("Error occurred during summrization: %s", e)
         raise

@@ -94,6 +94,7 @@ def _process_prod_job_sync(job_id: str, file_path: str) -> None:
         job.extracted_text = result["extracted_text"]
         job.labs_json = result["labs_json"]
         job.summary_text = result["summary_text"]
+        job.token_metrics_json = result.get("token_metrics")
         job.status = "completed"
         job.completed_at = datetime.now(timezone.utc)
         db.commit()

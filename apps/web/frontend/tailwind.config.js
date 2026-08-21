@@ -31,6 +31,10 @@ module.exports = {
           '0%':   { left: '-40%' },
           '100%': { left: '110%' },
         },
+        pulse: {
+          '0%, 100%': { opacity: '1' },
+          '50%':      { opacity: '0.45' },
+        },
       },
       animation: {
         'slide-up':              'slideUp 0.4s ease forwards',

@@ -35,6 +35,18 @@
     <!-- Nav Tabs -->
     <div class="flex items-center">
       <a
+        routerLink="/"
+        routerLinkActive="active-tab"
+        [routerLinkActiveOptions]="{ exact: true }"
+        #homeLink="routerLinkActive"
+        [style.color]="homeLink.isActive ? '#e8703a' : '#8b909e'"
+        [style.borderBottom]="homeLink.isActive ? '2px solid #e8703a' : '2px solid transparent'"
+        class="px-[22px] py-2 bg-transparent border-none font-[Syne]
+               text-[14px] font-semibold cursor-pointer tracking-wide
+               transition-all duration-200 hover:text-[#e8eaf0] no-underline">
+        Overview
+      </a>
+      <a
         routerLink="/analyze"
         routerLinkActive="active-tab"
         #analyzeLink="routerLinkActive"
