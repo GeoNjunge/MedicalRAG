@@ -6,7 +6,7 @@ load_dotenv(dotenv_path="../../../../apps/api/.env")
 
 PROD_BIOBERT_MODEL = "dmis-lab/biobert-v1.1"
 PROD_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
+DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b"
 
 
 def get_app_env() -> str:
