@@ -2,7 +2,7 @@
 // Copy .env.example to .env and run npm start / npm run build.
 
 export const environment = {
-  production: false,
-  apiBaseUrl: 'http://localhost:8000/api/v1',
-  frontendUrl: 'http://localhost:4200',
+  production: true,
+  apiBaseUrl: 'https://medicalrag-kz18.onrender.com/api/v1',
+  frontendUrl: 'https://medical-rag-constrained.vercel.app',
 };
