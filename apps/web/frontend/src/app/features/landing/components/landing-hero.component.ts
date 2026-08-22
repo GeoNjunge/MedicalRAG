@@ -17,7 +17,7 @@ import { LANDING_BADGES } from '../data/landing.constants';
           Medical RAG Document Processing System
         </p>
 
-        <h1 class="font-[Syne] text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-tight m-0 mb-5 leading-[1.08]">
+        <h1 class="font-[Arial] text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-tight m-0 mb-5 leading-[1.08]">
           Constrained Clinical
           <span style="background:linear-gradient(135deg,#ff8c52,#ffb347);
                        -webkit-background-clip:text; -webkit-text-fill-color:transparent;

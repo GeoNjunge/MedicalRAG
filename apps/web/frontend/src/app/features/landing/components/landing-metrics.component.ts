@@ -17,7 +17,7 @@ import { LANDING_METRICS, LandingMetric } from '../data/landing.constants';
             </p>
             <p
               [style.color]="accentColor(metric.accent)"
-              class="font-[Syne] text-[36px] font-extrabold m-0 mb-2 leading-none">
+              class="font-arial text-[36px] font-extrabold m-0 mb-2 leading-none">
               {{ metric.value }}
             </p>
             <p style="color:#8b909e;" class="text-[13px] m-0 leading-[1.6]">
