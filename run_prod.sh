@@ -33,8 +33,8 @@ if [[ ! -x "${PYTHON}" ]]; then
   PYTHON=python3
 fi
 
-HOST="${HOST:-127.0.0.1}"
-PORT="${PORT:-8000}"
+HOST="${HOST:-0.0.0.0}"
+PORT="${PORT:-10000}"
 WORKERS="${WORKERS:-1}"
 
 echo "Starting MedicalRAG API (production) on ${HOST}:${PORT}"
