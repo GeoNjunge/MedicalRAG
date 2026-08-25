@@ -15,7 +15,7 @@ from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharac
 
 from ml_core.pipeline.prompts import ENTITY_EXTRACTION_PROMPT, SUMMARY_PROMPT
 from ml_core.pipeline.settings import DEFAULT_GROQ_MODEL
-from ml_core.pipeline.summarizer_client import GroqSummarizer
+from ml_core.pipeline.summarizer_client import GroqSummarizer, GroqSummarizerError
 from ml_core.pipeline.text_utils import strip_markdown
 from ml_core.pipeline.token_metrics import build_summarizer_payload, build_summarizer_token_metrics
 
@@ -168,6 +168,9 @@ def run_prod_pipeline(
         }
         on_status(result)
         return result
+    except GroqSummarizerError as exc:
+        on_status("Failed")
+        return {"error": str(exc)}
     except Exception:
         on_status("Failed")
         raise

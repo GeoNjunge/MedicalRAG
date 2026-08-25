@@ -1,7 +1,7 @@
 import re
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
-from apps.api.app.core.logger_setup import logger, CentralizedLogger, time_metrics
+from ml_core.logging_utils import logger, CentralizedLogger, time_metrics
 import fitz
 
 from ml_core.pipeline.resources import get_resources

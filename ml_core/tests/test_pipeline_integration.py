@@ -5,7 +5,7 @@ from ml_core.src.ml_core.pipeline.document_reader import extract_text_from_pdf, 
 from ml_core.src.ml_core.pipeline.disease_extractor import get_negative_entities
 from ml_core.src.ml_core.pipeline.lab_extractor import extract_labs
 from ml_core.src.ml_core.pipeline.summarizer import summarize_content
-from apps.api.app.core.logger_setup import time_metrics, CentralizedLogger
+from ml_core.logging_utils import time_metrics, CentralizedLogger
 
 logger = CentralizedLogger.get_logger(__name__)
 

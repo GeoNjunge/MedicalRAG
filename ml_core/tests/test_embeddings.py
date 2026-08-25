@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from langchain_huggingface import HuggingFaceEmbeddings
-from apps.api.app.core.logger_setup import logger, CentralizedLogger, time_metrics
+from ml_core.logging_utils import logger, CentralizedLogger, time_metrics
 from ml_core.config import MODELS_BASE_PATH
 import os
 

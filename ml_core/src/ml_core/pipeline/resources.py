@@ -31,8 +31,12 @@ try:
         return _orig_validate(filled, schema, func_name, parent)
         
     confection._registry._validate_promise_args = _patched_validate
-except Exception:
-    pass
+except Exception as exc:
+    import logging
+
+    logging.getLogger(__name__).warning(
+        "medSpaCy confection patch not applied: %s", exc
+    )
 # =====================================================================================
 
 LLAMA_MODELS = {

@@ -52,8 +52,9 @@ def _stage_from_status(status_text):
 
 
 def _publish_job_event(job_id, event_payload):
-    channel = f"job_events:{job_id}"
-    redis_conn.publish(channel, json.dumps(event_payload, default=str))
+    from app.services.job_events import job_event_bus
+
+    job_event_bus.publish(job_id, event_payload)
 
 @time_metrics()
 def run_ner_pipeline(file_content, job_id, original_filename):
@@ -125,7 +126,7 @@ def run_ner_pipeline(file_content, job_id, original_filename):
         # # Generating summary
         update_status('Generating summary', job)
         logger.info("Generating summary")
-        summary_text = summarize_content(diseases, lab_results)
+        summary_text = summarize_content(extracted_text)
         token_metrics = build_summarizer_token_metrics(
             extracted_text,
             diseases,

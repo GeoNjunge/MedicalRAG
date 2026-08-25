@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { JobResponse, JobEvent } from '../models/mednlp.models';
 import { environment } from '../../../environments/environment';
@@ -7,6 +7,7 @@ import { environment } from '../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class MednlpApiService {
   private base = environment.apiBaseUrl;
+  private apiKey = environment.apiKey;
   private readonly maxReconnectAttempts = 5;
   private readonly reconnectBaseDelayMs = 1000;
   private readonly reconnectMaxDelayMs = 10000;
@@ -17,8 +18,10 @@ export class MednlpApiService {
     const fd = new FormData();
     fd.append('file', file);
     if (patientId) fd.append('patient_id', patientId);
-    // fd.append('doc_type', docType);
-    return this.http.post<JobResponse>(`${this.base}/upload`, fd);
+    const headers = this.apiKey
+      ? new HttpHeaders({ 'X-API-Key': this.apiKey })
+      : undefined;
+    return this.http.post<JobResponse>(`${this.base}/upload`, fd, { headers });
   }
 
   streamJob(jobId: string): Observable<JobEvent> {
@@ -90,7 +93,11 @@ export class MednlpApiService {
         cleanupSource();
         clearReconnectTimer();
 
-        source = new EventSource(`${this.base}/jobs/${jobId}/events`);
+        const sseUrl = this.apiKey
+          ? `${this.base}/jobs/${jobId}/events?api_key=${encodeURIComponent(this.apiKey)}`
+          : `${this.base}/jobs/${jobId}/events`;
+
+        source = new EventSource(sseUrl);
 
         source.onopen = () => {
           reconnectAttempt = 0;

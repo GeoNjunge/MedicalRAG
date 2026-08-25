@@ -26,6 +26,8 @@ class AppConfig(BaseSettings):
     OLLAMA_URL: str
     GROQ_API_KEY: Optional[str] = None
     GROQ_MODEL: Optional[str] = None
+    API_KEY: Optional[str] = None
+    REDIS_URL: Optional[str] = None
 
     model_config = SettingsConfigDict(
           env_file='.env',

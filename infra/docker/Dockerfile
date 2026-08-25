@@ -1,35 +1,30 @@
-# Install system dependencies for PyTorch, FastAPI, and general packages
+# Production API image (lightweight — no local LLM stack)
 FROM python:3.11-slim
 
 WORKDIR /app
+
+ENV PYTHONPATH=/app/apps/api:/app/ml_core/src \
+    PYTHONUNBUFFERED=1 \
+    APP_ENV=production
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libffi-dev \
     libssl-dev \
-    python3-dev \
-    gcc \
-    g++ \
-    make \
     && rm -rf /var/lib/apt/lists/*
 
-RUN source /app/apps/api/venv/bin/activate
-ENV PATH="/venv/bin:$PATH"
+RUN pip install --no-cache-dir --upgrade pip
 
-RUN pip install --upgrade pip
+COPY requirements-prod.txt requirements-prod.txt
+COPY apps ./apps
+COPY ml_core ./ml_core
 
-COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements-prod.txt
 
-# Use no-cache-dir to avoid memory issues
-RUN pip install --upgrade pip \
-    && pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu \
-    && pip install -r requirements.txt
+RUN mkdir -p /app/apps/api/files /app/logs
 
-# Copy the backend code
-COPY / .
+WORKDIR /app/apps/api
 
-# Expose FastAPI port
 EXPOSE 8000
 
-# Run the app using uvicorn
-CMD ["python" "uvicorn", "apps.api.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

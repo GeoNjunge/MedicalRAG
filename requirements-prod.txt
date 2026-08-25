@@ -22,3 +22,6 @@ PyMuPDF
 # Production pipeline (PyMuPDF + LangChain chunking + Groq LLM)
 langchain-text-splitters
 groq
+
+# Job events and dev worker queue
+redis

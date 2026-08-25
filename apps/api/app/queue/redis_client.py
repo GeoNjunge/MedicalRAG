@@ -1,5 +1,11 @@
-from rq import Queue
+import os
+
 from redis import Redis
- 
-# Establish a connection to Redis
-redis_conn = Redis(host="localhost", port=6379, db=0)
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+redis_conn = Redis.from_url(
+    REDIS_URL,
+    socket_timeout=5,
+    decode_responses=False,
+)

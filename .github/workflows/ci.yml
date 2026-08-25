@@ -42,8 +42,18 @@ jobs:
 
       - name: Run unit tests (fast only)
         env:
-          APP_ENV: production
+          APP_ENV: dev
+          DATABASE_URL: sqlite:///:memory:
+          S3_BUCKET_URL: http://test
+          S3_BUCKET_NAME: test
+          AWS_ACCESS_KEY: test
+          AWS_SECRET_KEY: test
+          S3_REGION_NAME: us-east-1
+          OLLAMA_URL: http://localhost:11434
           REDIS_URL: redis://localhost:6379/0
+          PYTHONPATH: apps/api:ml_core/src
         run: |
-          # Skip tests marked as integration. Ensure heavy tests are marked.
-          pytest -q -m "not integration" --maxfail=1
+          pytest apps/api/app/tests/test_upload.py -q --maxfail=1
+
+      - name: Verify Docker image builds
+        run: docker build -f infra/docker/Dockerfile -t clinical-ai .

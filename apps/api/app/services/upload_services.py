@@ -1,33 +1,58 @@
 from pathlib import Path
+import re
 
-from fastapi import Depends, UploadFile
+from fastapi import Depends, HTTPException, UploadFile
 from typing import Optional
 from app.services.file_validation import validator
 from app.storage.s3 import uploader
 from sqlalchemy.orm import Session
-from app.core.logger_setup import logger, CentralizedLogger
+from app.core.logger_setup import CentralizedLogger
 from app.models.job import Job
 from app.core.config import is_production
 from app.database.session import get_db
 
 logger = CentralizedLogger.get_logger(__name__)
 
-async def upload_file(file: UploadFile,
-        patient_id: str,
-        priority: int,
-        model_version: Optional[str],
-        db: Session = Depends(get_db)):
-    
+_PATIENT_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+
+
+def _validate_patient_id(patient_id: str) -> None:
+    if not _PATIENT_ID_PATTERN.match(patient_id):
+        raise HTTPException(
+            status_code=400,
+            detail="patient_id must be 1-64 alphanumeric characters, hyphens, or underscores",
+        )
+
+
+def _sanitize_filename(filename: str | None) -> str:
+    if not filename:
+        return "upload.pdf"
+    safe_name = Path(filename).name
+    if safe_name in {"", ".", ".."} or ".." in safe_name:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    return safe_name
+
+
+async def upload_file(
+    file: UploadFile,
+    patient_id: str,
+    priority: int,
+    model_version: Optional[str],
+    db: Session = Depends(get_db),
+):
     try:
-        #Validator
+        _validate_patient_id(patient_id)
+        safe_filename = _sanitize_filename(file.filename)
+
         validator.validate_size(file)
         await validator.validate_pdf(file)
 
         # Compute Hash
         file_hash = validator.compute_hash(file)
 
-        unique_key = uploader.get_s3_key(file.filename, patient_id)
+        unique_key = uploader.get_s3_key(safe_filename, patient_id)
         file_path = Path(f"files/{unique_key}")
+        file_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(file_path, 'wb') as buffer:
             content = await file.read()
@@ -38,7 +63,7 @@ async def upload_file(file: UploadFile,
             patient_id=patient_id,
             input_type="pdf",
             file_url="object_url",
-            original_filename=file.filename,
+            original_filename=safe_filename,
             priority=priority,
             model_version=model_version,
             file_hash=file_hash,

@@ -1,5 +1,6 @@
-from apps.api.app.core.logger_setup import time_metrics, logger
+from ml_core.logging_utils import time_metrics, logger
 import json
+import re
 from medspacy.ner import TargetRule
 
 from ml_core.pipeline.resources import get_resources
@@ -55,6 +56,49 @@ additional_rules = [
 # Exclusion strings to catch surgical/anatomical false positives leaking into lookahead frames
 SURGICAL_EXCLUSIONS = {"hysterectomy", "oophorectomy", "bunionectomy", "mastectomy", "appendix", "surgical"}
 
+UNIT_LOOKBEHIND = 3
+UNIT_LOOKAHEAD = 8
+
+_UNIT_REGEX = re.compile(
+    r"(?i)(?:"
+    r"(?:mg|g|mmol|meq|u|k|m)/(?:dl|l|ul|mcl|ml)"
+    r"|%"
+    r"|(?:x10[\^*]3|10[\^*]3)/(?:ul|mcl)"
+    r"|ml/min/\d\.\d+m2"
+    r")"
+)
+
+_FLAG_EXACT = {
+    "h": "HIGH",
+    "l": "LOW",
+    "high": "HIGH",
+    "low": "LOW",
+    "his": "HIGH",
+    "abn": "ABNORMAL",
+    "abnormal": "ABNORMAL",
+    "critical": "ABNORMAL",
+    "borderline": "ABNORMAL",
+    "hemolyzed": "ABNORMAL",
+    "!": "ABNORMAL",
+    "❗": "ABNORMAL",
+    "normal": "NORMAL",
+}
+
+
+def _normalize_status_flag(raw: str) -> str:
+    cleaned = raw.strip().lower().strip("|*!")
+    if not cleaned:
+        return "NORMAL"
+    if cleaned in _FLAG_EXACT:
+        return _FLAG_EXACT[cleaned]
+    if cleaned.startswith(("high", "his")):
+        return "HIGH"
+    if cleaned.startswith("low"):
+        return "LOW"
+    if cleaned.startswith(("abn", "abnormal", "crit", "border", "hemol")):
+        return "ABNORMAL"
+    return "NORMAL"
+
 def configure_lab_matcher(nlp):
     target_matcher = nlp.get_pipe("medspacy_target_matcher")
     target_matcher.add(clinical_rules)
@@ -77,9 +121,41 @@ def _find_value_in_window(doc, start_index: int) -> str:
 
 def _find_unit_in_window(doc, start_index: int) -> str:
     end = _token_window_end(doc, start_index)
-    for token in doc[start_index:end]:
+    value_idx = None
+    for i in range(start_index, end):
+        if doc[i].ent_type_ == "LAB_VALUE":
+            value_idx = i
+            break
+
+    if value_idx is None:
+        scan_start, scan_end = start_index, end
+    else:
+        scan_start = max(0, value_idx - UNIT_LOOKBEHIND)
+        scan_end = min(len(doc), value_idx + UNIT_LOOKAHEAD + 1)
+
+    for token in doc[scan_start:scan_end]:
         if token.ent_type_ == "UNIT":
             return token.text
+
+    span = doc[scan_start:scan_end]
+    for joiner in ("", " "):
+        blob = joiner.join(token.text for token in span)
+        match = _UNIT_REGEX.search(blob)
+        if match:
+            return match.group(0)
+
+    wider_end = min(len(doc), start_index + LAB_TOKEN_WINDOW + 4)
+    if wider_end > scan_end:
+        wider_span = doc[scan_end:wider_end]
+        for token in wider_span:
+            if token.ent_type_ == "UNIT":
+                return token.text
+        for joiner in ("", " "):
+            blob = joiner.join(token.text for token in wider_span)
+            match = _UNIT_REGEX.search(blob)
+            if match:
+                return match.group(0)
+
     return ""
 
 
@@ -87,7 +163,7 @@ def _find_flag_in_window(doc, start_index: int) -> str:
     end = _token_window_end(doc, start_index)
     for token in doc[start_index:end]:
         if token.ent_type_ == "FLAG":
-            return token.text
+            return _normalize_status_flag(token.text)
         # Safety Gate: If a lookahead window steps directly into a surgical history string, invalidate it
         if token.text.lower() in SURGICAL_EXCLUSIONS:
             return "EXCLUDE"
@@ -135,15 +211,29 @@ def _merge_lab_results(results: list[dict]) -> dict[str, dict]:
         if name == "TOTAL":
             continue
 
-        if name not in final_report or (
-            final_report[name]["value"] == "N/A" and res["value"] != "N/A"
-        ):
-            final_report[name] = {
-                "test": name,
-                "value": res["value"],
-                "unit": res["unit"] if res["unit"] else "",
-                "status": res["status"],
-            }
+        incoming = {
+            "test": name,
+            "value": res["value"],
+            "unit": res.get("unit") or "",
+            "status": _normalize_status_flag(res.get("status") or "NORMAL"),
+        }
+
+        if name not in final_report:
+            final_report[name] = incoming
+            continue
+
+        existing = final_report[name]
+
+        if incoming["value"] != "N/A":
+            existing["value"] = incoming["value"]
+
+        if incoming["unit"]:
+            if not existing["unit"]:
+                existing["unit"] = incoming["unit"]
+        # Never overwrite a previously extracted unit with an empty string.
+
+        if incoming["status"] != "NORMAL" or existing["status"] == "NORMAL":
+            existing["status"] = incoming["status"]
 
     return final_report
 

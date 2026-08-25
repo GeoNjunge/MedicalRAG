@@ -1,4 +1,4 @@
-from apps.api.app.core.logger_setup import CentralizedLogger, time_metrics
+from ml_core.logging_utils import CentralizedLogger, time_metrics
 from ml_core.pipeline.lab_extractor import extract_labs_one_pass
 from ml_core.pipeline.resources import get_resources
 from ml_core.pipeline.sliding_window import (

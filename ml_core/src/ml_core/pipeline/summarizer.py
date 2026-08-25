@@ -1,20 +1,16 @@
-import logging
-
 from ml_core.pipeline.prompts import SUMMARY_PROMPT
 from ml_core.pipeline.resources import get_resources
 from ml_core.pipeline.text_utils import strip_markdown
-from ml_core.pipeline.token_metrics import build_summarizer_payload
+from ml_core.logging_utils import CentralizedLogger, time_metrics
 
-logger = logging.getLogger(__name__)
+logger = CentralizedLogger.get_logger(__name__)
 
-
-def summarize_content(diseases, labs):
+@time_metrics()
+def summarize_content(extracted_text: str) -> str:
     try:
         summarizer = get_resources().summarizer_client
-        payload = build_summarizer_payload(diseases, labs)
-        raw = summarizer.summarize(SUMMARY_PROMPT, payload)
+        raw = summarizer.summarize(SUMMARY_PROMPT, extracted_text)
         return strip_markdown(raw)
-
     except Exception as e:
-        logger.error("Error occurred during summrization: %s", e)
+        logger.error("Error occurred during summarization: %s", e)
         raise

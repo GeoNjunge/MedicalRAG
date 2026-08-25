@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from app.core.logger_setup import CentralizedLogger
 from app.database.session import SessionLocal
 from app.models.job import Job
+from app.services.file_cleanup import delete_upload_file
 from app.services.job_events import job_event_bus
 from ml_core.pipeline.prod_pipeline import run_prod_pipeline
 
@@ -61,9 +62,10 @@ def _publish_status(job_id: str, status_text: str | dict) -> None:
 
 
 def _process_prod_job_sync(job_id: str, file_path: str) -> None:
-    db = SessionLocal()
+    db = None
     job = None
     try:
+        db = SessionLocal()
         job = db.query(Job).filter(Job.id == str(job_id)).first()
         if not job:
             raise RuntimeError("Job not found")
@@ -109,7 +111,9 @@ def _process_prod_job_sync(job_id: str, file_path: str) -> None:
             db.commit()
         raise
     finally:
-        db.close()
+        delete_upload_file(file_path)
+        if db is not None:
+            db.close()
 
 
 async def _run_prod_job(job_id: str, file_path: str) -> None:

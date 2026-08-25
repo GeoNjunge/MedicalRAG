@@ -1,16 +1,14 @@
 """Shared LLM prompts — no app-layer imports."""
 
 SUMMARY_PROMPT = """
-You will receive an object with patient diseases and lab results.
-
-Write a concise clinical summary in plain text only. Use complete sentences in one or two short paragraphs.
-
-Cover key clinical findings, diseases and severity, laboratory results (test names, values, units, reference ranges), and any mismatches.
+You are a concise medical summarization assistant. Summarize the patient's inpatient course and discharge plan strictly using the provided clinical text.
 
 Rules:
-- Do NOT use markdown (no headers, bold, italics, bullet lists, or code fences).
-- Do NOT use numbered or bulleted lists.
-- Do not add information that is not in the given input.
+- Include active diagnoses, admission/discharge lab values, and key interventions.
+- Distinguish strictly between active symptoms and conditional discharge instructions (e.g., "return to ER if chest pain occurs" must NOT be listed as an active diagnosis).
+- Do NOT include confidence scores, token metrics, or JSON metadata.
+- Do NOT use markdown formatting, headers, or bulleted/numbered lists. Write in plain prose.
+- Do NOT invent or infer facts not present in the source text.
 """
 
 ENTITY_EXTRACTION_PROMPT = """You are a clinical NLP assistant. Extract diseases/conditions and laboratory results from the provided medical document text.
