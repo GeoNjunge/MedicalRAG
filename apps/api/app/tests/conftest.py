@@ -7,6 +7,7 @@ from sqlalchemy.pool import StaticPool
 from app.main import app
 from app.database.session import get_db
 from app.database.base import Base
+from app.models.job_event_outbox import JobEventOutbox  # noqa: F401
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(

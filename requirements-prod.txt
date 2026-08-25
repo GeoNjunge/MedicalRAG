@@ -25,3 +25,6 @@ groq
 
 # Job events and dev worker queue
 redis
+
+# PostgreSQL driver (sync SQLAlchemy; asyncpg URLs are normalized at runtime)
+psycopg[binary]>=3.1

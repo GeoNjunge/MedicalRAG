@@ -1,4 +1,5 @@
 from app.core.logger_setup import CentralizedLogger
+from app.core.audit_logger import log_job_terminal
 from app.models.job import Job
 from app.database.session import SessionLocal
 from app.core.config import AppConfig
@@ -107,6 +108,7 @@ def process_ai_job(job_id: str, file_path: str):
             job.status = "failed"
             job.retry_count += 1
             db.commit()
+            log_job_terminal(str(job.id), "failed", patient_id=job.patient_id)
             return
 
         job.diseases_json = result["diseases_json"]
@@ -117,6 +119,7 @@ def process_ai_job(job_id: str, file_path: str):
         job.status = "completed"
         job.completed_at = datetime.now(timezone.utc)
         db.commit()
+        log_job_terminal(str(job.id), "completed", patient_id=job.patient_id)
 
         logger.info(f"Job {job.id} completed at {job.completed_at}")
 
@@ -127,6 +130,7 @@ def process_ai_job(job_id: str, file_path: str):
             job.retry_count += 1
             job.error_message = str(e)
             db.commit()
+            log_job_terminal(str(job.id), "failed", patient_id=job.patient_id)
         raise
 
     finally:

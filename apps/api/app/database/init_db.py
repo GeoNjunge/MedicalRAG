@@ -3,7 +3,8 @@ from sqlalchemy import inspect, text
 from app.database.base import Base
 from app.database.session import engine
 from app.models.job import Job
-from app.core.logger_setup import logger, CentralizedLogger
+from app.models.job_event_outbox import JobEventOutbox
+from app.core.logger_setup import CentralizedLogger
 
 logger = CentralizedLogger.get_logger(__name__)
 

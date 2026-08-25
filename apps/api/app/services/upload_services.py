@@ -10,6 +10,7 @@ from app.core.logger_setup import CentralizedLogger
 from app.models.job import Job
 from app.core.config import is_production
 from app.database.session import get_db
+from app.services.file_cleanup import delete_upload_file
 
 logger = CentralizedLogger.get_logger(__name__)
 
@@ -76,25 +77,36 @@ async def upload_file(
         db.add(job)
         db.commit()
         job_id_str = str(job.id)
-        
+
         try:
             db.refresh(job)
             logger.info(f"Job refreshed. ID: {job_id_str}")
         except Exception as e:
             logger.warning(f"Refresh failed but continuing: {e}")
 
-        if is_production():
-            from app.worker.prod_tasks import schedule_prod_job
+        try:
+            if is_production():
+                from app.worker.prod_tasks import schedule_prod_job
 
-            schedule_prod_job(job.id, job.file_path)
-            logger.info(f"Scheduled production pipeline for job {job_id_str}")
-        else:
-            from app.services.push_job_to_redis import push_job
+                schedule_prod_job(job.id, job.file_path)
+                logger.info(f"Scheduled production pipeline for job {job_id_str}")
+            else:
+                from app.services.push_job_to_redis import push_job
 
-            push_job(job.id, job.file_path)
-            logger.info(f"Enqueued development pipeline for job {job_id_str}")
+                push_job(job.id, job.file_path)
+                logger.info(f"Enqueued development pipeline for job {job_id_str}")
+        except Exception as enqueue_error:
+            logger.error(f"Failed to enqueue job {job_id_str}: {enqueue_error}")
+            job.status = "failed"
+            job.error_message = f"Enqueue failed: {enqueue_error}"
+            db.commit()
+            delete_upload_file(file_path)
+            raise HTTPException(
+                status_code=503,
+                detail="Failed to enqueue job for processing",
+            ) from enqueue_error
 
-        return {"job_id": job.id, "job_status":job.status, "message":"Job Created Successfully"}
+        return {"job_id": job.id, "job_status": job.status, "message": "Job Created Successfully"}
 
     except Exception as error:
         logger.error(f"Error Uploading file: {error}")

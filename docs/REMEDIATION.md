@@ -27,11 +27,11 @@ Prioritized from the enterprise engineering audit. **P0 = ship-blocking**, **P1 
 | ID | Item | Status | Notes |
 |----|------|--------|-------|
 | P1-1 | Wire S3 upload/download (remove local `files/` as source of truth) | ⏳ Pending | Dead code path; PHI on app disk |
-| P1-2 | Durable job queue (outbox pattern) — rollback DB if Redis enqueue fails | ⏳ Pending | Prevents orphaned pending jobs |
+| P1-2 | Durable job queue / transactional outbox for events + enqueue rollback | ✅ Done | `event_outbox.py`, `job_event_outbox` model, `upload_services.py` |
 | P1-3 | Delete uploaded PDFs after processing + startup orphan purge | ✅ Done | `file_cleanup.py`, workers, `main.py` lifespan |
-| P1-4 | Postgres instead of SQLite in production | ⏳ Pending | Concurrent writes, encryption options |
+| P1-4 | Postgres instead of SQLite in production | ✅ Done | `database/session.py` pooled `postgresql+psycopg`, asyncpg URL normalization |
 | P1-5 | Groq client timeouts, retries, structured failure | ✅ Done | `summarizer_client.py`, `prod_pipeline.py` |
-| P1-6 | Structured audit log (actor, patient_id, job_id, action) | ⏳ Pending | HIPAA / SOC2 |
+| P1-6 | Structured audit log (actor, patient_id, job_id, action) | ✅ Done | `core/audit_logger.py`, routes + workers |
 | P1-7 | Field-level encryption or KMS for PHI columns | ⏳ Pending | Data at rest |
 | P1-8 | Rate limiting on `/upload` (per IP / API key) | ⏳ Pending | Abuse prevention |
 | P1-9 | OAuth2 / JWT with patient-scoped RBAC (replace shared API key) | ⏳ Pending | Real authorization |
@@ -65,7 +65,7 @@ Prioritized from the enterprise engineering audit. **P0 = ship-blocking**, **P1 
 
 ## Implementation order (recommended)
 
-1. **Week 1:** P0 verification (CI green, manual prod smoke test) — **complete**
-2. **Week 2–3:** P1-1 → P1-4 (S3 wiring, queue durability, Postgres)
-3. **Week 4:** P1-6 → P1-9, P1-11 (audit, auth upgrade, health probes)
+1. **Week 1:** P0 verification — **complete**
+2. **Week 2–3:** P1-1 (S3), P1-11 (health probes), P1-14 (DLQ)
+3. **Week 4:** P1-7 (encryption), P1-8 → P1-9 (rate limit, OAuth)
 4. **Ongoing:** P2 items tied to release milestones

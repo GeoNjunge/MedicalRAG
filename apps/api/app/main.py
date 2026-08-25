@@ -6,11 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database.init_db import init_db
 from app.core.config import config, get_cors_origins, is_production
 from app.services.file_cleanup import purge_orphaned_uploads
+from app.services.job_events import replay_unpublished_events
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
     purge_orphaned_uploads()
+    replay_unpublished_events()
     yield
 
 logger = CentralizedLogger.get_logger(__name__)

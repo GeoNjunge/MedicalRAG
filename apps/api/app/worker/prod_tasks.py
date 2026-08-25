@@ -6,6 +6,7 @@ import asyncio
 from datetime import datetime, timezone
 
 from app.core.logger_setup import CentralizedLogger
+from app.core.audit_logger import log_job_terminal
 from app.database.session import SessionLocal
 from app.models.job import Job
 from app.services.file_cleanup import delete_upload_file
@@ -90,6 +91,7 @@ def _process_prod_job_sync(job_id: str, file_path: str) -> None:
             job.status = "failed"
             job.retry_count += 1
             db.commit()
+            log_job_terminal(str(job.id), "failed", patient_id=job.patient_id)
             return
 
         job.diseases_json = result["diseases_json"]
@@ -100,6 +102,7 @@ def _process_prod_job_sync(job_id: str, file_path: str) -> None:
         job.status = "completed"
         job.completed_at = datetime.now(timezone.utc)
         db.commit()
+        log_job_terminal(str(job.id), "completed", patient_id=job.patient_id)
         logger.info(f"Job {job.id} completed at {job.completed_at}")
     except Exception as error:
         logger.error(f"Production pipeline failed for job {job_id}: {error}")
@@ -109,6 +112,7 @@ def _process_prod_job_sync(job_id: str, file_path: str) -> None:
             job.retry_count += 1
             job.error_message = str(error)
             db.commit()
+            log_job_terminal(str(job.id), "failed", patient_id=job.patient_id)
         raise
     finally:
         delete_upload_file(file_path)
