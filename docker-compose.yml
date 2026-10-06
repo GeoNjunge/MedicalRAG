@@ -1,4 +1,5 @@
-# Local CI/CD stack: bind-mounted repo + venv/models (zero-copy), scalable API & RQ workers.
+# Local CI/CD stack: bind-mounted repo + venv/models (zero-copy).
+# Use scripts/sim-up.sh to enforce WSL RAM budget (default 6.5 GiB) and worker caps.
 # API startup matches run_prod.sh via infra/scripts/entrypoint-api.sh
 
 name: medicalrag-local
@@ -12,11 +13,15 @@ x-api-common: &api-common
   image: medicalrag-local:runtime
   env_file:
     - .env
+    - path: .sim-scale.env
+      required: false
   environment: &api-env
     MEDICALRAG_ROOT: /app
     HOST: 0.0.0.0
     PORT: "10000"
     WORKERS: ${WORKERS:-1}
+    SIM_MAX_RQ_WORKERS: ${SIM_MAX_RQ_WORKERS:-1}
+    SIM_BUDGET_GIB: ${SIM_BUDGET_GIB:-6.5}
     REDIS_URL: redis://redis:6379/0
     DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://medicalrag:medicalrag@postgres:5432/medicalrag}
   volumes: &repo-volumes
@@ -52,6 +57,7 @@ x-api-common: &api-common
 services:
   loadbalancer:
     image: nginx:1.27-alpine
+    mem_limit: ${SIM_NGINX_MEM_LIMIT:-128m}
     ports:
       - "${LB_PORT:-8080}:8080"
     volumes:
@@ -66,11 +72,14 @@ services:
   api:
     <<: *api-common
     command: ["/usr/local/bin/entrypoint-api.sh"]
+    mem_limit: ${SIM_API_MEM_LIMIT:-512m}
     expose:
       - "10000"
   rq-worker:
     <<: *api-common
     command: ["/usr/local/bin/entrypoint-worker.sh"]
+    # One process = one warm copy of all pipeline models. Extra replicas multiply RAM (~4–6 GiB each).
+    mem_limit: ${RQ_WORKER_MEM_LIMIT:-6g}
     environment:
       <<: *api-env
       WORKER_APP_ENV: dev
@@ -89,6 +98,7 @@ services:
       start_period: 120s
   redis:
     image: redis:7-alpine
+    mem_limit: ${SIM_REDIS_MEM_LIMIT:-128m}
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     networks:
       - vpc-data
@@ -100,6 +110,7 @@ services:
 
   postgres:
     image: postgres:16-alpine
+    mem_limit: ${SIM_POSTGRES_MEM_LIMIT:-512m}
     environment:
       POSTGRES_USER: medicalrag
       POSTGRES_PASSWORD: medicalrag
