@@ -9,8 +9,8 @@ import { PIPELINE_STEPS, PipelineStep } from '../data/landing.constants';
       <div class="max-w-6xl mx-auto">
         <div class="mb-8 text-center">
           <h2 class="font-[Syne] text-[28px] font-bold m-0 mb-2">End-to-End Pipeline</h2>
-          <p style="color:#8b909e;" class="text-[14px] m-0">
-            From PDF upload to validated clinical JSON — built for constrained CPU environments.
+          <p style="color:#8b909e;" class="text-[14px] m-0 max-w-2xl mx-auto leading-[1.7]">
+            PDF → extract facts → validate → summarize. Grounded output for messy real-world records.
           </p>
         </div>
 

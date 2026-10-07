@@ -5,7 +5,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
   standalone: true,
   template: `
 <div style="background:#16181d; border:1px solid #2a2e38;"
-     class="rounded-2xl p-6 animate-[slideUp_0.4s_ease_forwards]">
+     class="rounded-2xl p-6 animate-[slideUp_0.4s_ease_forwards] min-w-0 max-w-full">
 
   <div class="flex items-center gap-2 mb-3.5">
     <div style="background:rgba(79,158,248,0.1);"

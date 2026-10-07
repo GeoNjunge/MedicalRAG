@@ -1,91 +1,105 @@
-<div class="max-w-7xl mx-auto px-6 py-10">
+<div class="w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 min-w-0 box-border">
 
-  <!-- Page header -->
-  <div class="mb-9">
-    <h1 class="font-[Syne] text-[34px] font-bold tracking-tight m-0 mb-2">
-      Medical Document
-      <span style="background:linear-gradient(135deg,#ff8c52,#ffb347);
-                   -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-                   background-clip:text;">Intelligence</span>
-    </h1>
-    <p style="color:#8b909e;" class="text-[15px] m-0">
-      Upload clinical notes, lab reports, or discharge summaries for AI-powered NLP analysis.
-    </p>
-  </div>
+ <!-- Page header -->
+ <div class="mb-9">
+ <h1 class="font-[Syne] text-[34px] font-bold tracking-tight m-0 mb-2">
+ Document
+ <span style="background:linear-gradient(135deg,#ff8c52,#ffb347);
+ -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+ background-clip:text;">Analysis</span>
+ </h1>
+ <p style="color:#8b909e;" class="text-[15px] m-0 max-w-2xl leading-[1.65]">
+ Upload a medical PDF to extract diseases, lab values, and a summary grounded in structured
+ facts - not raw document guessing.
+ </p>
+ </div>
 
-  <!-- Two-column layout -->
-  <div class="grid gap-[22px]" style="grid-template-columns:400px 1fr; align-items:start;">
+ <!-- Two-column layout (stacks below xl; min-w-0 prevents JSON/table blowout) -->
+ <div
+ class="grid grid-cols-1 xl:grid-cols-[minmax(0,400px)_minmax(0,1fr)] gap-[22px] items-start w-full">
 
-    <!-- LEFT: Upload + Job Status -->
-    <div class="flex flex-col gap-4">
+ <!-- LEFT: Upload + Job Status -->
+ <div class="flex flex-col gap-4 min-w-0">
 
-      <app-upload-panel
-        (fileSelected)="onFileSelected($event)"
-        (patientIdChange)="patientId.set($event)"
-        (docTypeChange)="docType.set($event)"
-        (upload)="startUpload()"
-        [disabled]="uploading()">
-      </app-upload-panel>
+ <app-upload-panel
+ (fileSelected)="onFileSelected($event)"
+ (patientIdChange)="patientId.set($event)"
+ (docTypeChange)="docType.set($event)"
+ (upload)="startUpload()"
+ [disabled]="uploading()">
+ </app-upload-panel>
 
-      @if (jobId()) {
-        <app-job-status
-          [jobId]="jobId()!"
-          [steps]="steps()"
-          [pollCount]="pollCount()"
-          [done]="pollDone()">
-        </app-job-status>
-      }
-    </div>
+ @if (jobId()) {
+ <app-job-status
+ [jobId]="jobId()!"
+ [steps]="steps()"
+ [pollCount]="pollCount()"
+ [done]="pollDone()">
+ </app-job-status>
+ }
+ </div>
 
-    <!-- RIGHT: Results -->
-    <div class="flex flex-col gap-4">
+ <!-- RIGHT: Results -->
+ <div class="flex flex-col gap-4 min-w-0 w-full">
 
-      @if (!results()) {
-        <!-- Empty state -->
-        <div
-          style="background:#16181d; border:1px solid #2a2e38;"
-          class="rounded-2xl px-8 py-[72px] text-center">
-          <div
-            style="background:rgba(232,112,58,0.06);"
-            class="w-16 h-16 rounded-[18px] flex items-center justify-center mx-auto mb-4">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none"
-                 stroke="#555b6b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0
-                       012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0
-                       01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-          </div>
-          <p class="font-[Syne] text-[17px] font-bold m-0 mb-2" style="color:#8b909e;">
-            Awaiting Analysis
-          </p>
-          <p style="color:#555b6b;" class="text-[13px] m-0 leading-[1.7] max-w-[320px] mx-auto">
-            Upload a medical document on the left to view AI-extracted diseases,
-            laboratory values, and a clinical summary.
-          </p>
-        </div>
-      }
+ @if (!results()) {
+ <!-- Empty state -->
+ <div
+ style="background:#16181d; border:1px solid #2a2e38;"
+ class="rounded-2xl px-8 py-[72px] text-center">
+ <div
+ style="background:rgba(232,112,58,0.06);"
+ class="w-16 h-16 rounded-[18px] flex items-center justify-center mx-auto mb-4">
+ <svg width="30" height="30" viewBox="0 0 24 24" fill="none"
+ stroke="#555b6b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+ <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0
+ 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0
+ 01.293.707V19a2 2 0 01-2 2z"/>
+ </svg>
+ </div>
+ <p class="font-[Syne] text-[17px] font-bold m-0 mb-2" style="color:#8b909e;">
+ Awaiting Analysis
+ </p>
+ <p style="color:#555b6b;" class="text-[13px] m-0 leading-[1.7] max-w-[320px] mx-auto">
+ Results show validated extraction first - conditions, labs, then a summary generated
+ only from those facts.
+ </p>
+ </div>
+ }
 
-      @if (results()) {
-        @if (results()!.token_metrics) {
-          <app-results-token-metrics
-            [metrics]="results()!.token_metrics!">
-          </app-results-token-metrics>
-        }
+ @if (results()) {
+ <app-results-extraction-context
+ [metrics]="results()!.token_metrics ?? null">
+ </app-results-extraction-context>
 
-        <app-results-summary
-          [summaryText]="results()!.summary_text"
-          (openChat)="openChat()">
-        </app-results-summary>
+ <app-results-summary
+ [summaryText]="results()!.summary_text"
+ (openChat)="openChat()">
+ </app-results-summary>
 
-        <app-results-diseases
-          [diseases]="results()!.diseases_json">
-        </app-results-diseases>
+ <app-results-diseases
+ [diseases]="results()!.diseases_json">
+ </app-results-diseases>
 
-        <app-results-labs
-          [labs]="results()!.labs_json">
-        </app-results-labs>
-      }
+ <app-results-labs
+ [labs]="results()!.labs_json">
+ </app-results-labs>
 
-    </div>
-  </div>
+ <div
+ style="background:#0e0f11; border:1px solid #2a2e38;"
+ class="rounded-2xl p-4 overflow-hidden min-w-0 max-w-full">
+ <div class="flex items-center justify-between gap-2 mb-3 min-w-0">
+ <span style="color:#8b909e;" class="font-mono text-[11px] uppercase tracking-[0.15em] truncate">
+ Validated JSON output
+ </span>
+ <span style="color:#3ecf8e;" class="font-mono text-[10px] flex-shrink-0">schema-checked</span>
+ </div>
+ <pre
+ style="color:#8b909e; background:#16181d; border:1px solid #2a2e38;"
+ class="text-[11px] leading-[1.6] m-0 p-4 rounded-xl overflow-x-auto overflow-y-auto max-h-[420px] max-w-full font-mono whitespace-pre-wrap break-words">{{ results() | json }}</pre>
+ </div>
+ }
+
+ </div>
+ </div>
 </div>

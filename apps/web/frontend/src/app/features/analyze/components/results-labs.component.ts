@@ -6,7 +6,7 @@ import { LabResult } from '../../../core/models/mednlp.models';
   standalone: true,
   template: `
 <div style="background:#16181d; border:1px solid #2a2e38;"
-     class="rounded-2xl p-6 animate-[slideUp_0.4s_ease_forwards]">
+     class="rounded-2xl p-6 animate-[slideUp_0.4s_ease_forwards] min-w-0 max-w-full">
 
   <div class="flex items-center gap-2 mb-3.5">
     <div style="background:rgba(62,207,142,0.1);"
@@ -24,11 +24,11 @@ import { LabResult } from '../../../core/models/mednlp.models';
     </span>
   </div>
 
-  <!-- Table -->
-  <div style="border:1px solid #2a2e38;" class="overflow-hidden rounded-[10px]">
+  <!-- Table (scrolls horizontally on narrow viewports) -->
+  <div style="border:1px solid #2a2e38;" class="overflow-x-auto rounded-[10px] max-w-full">
 
     <!-- Header -->
-    <div class="grid px-3.5 py-2" style="grid-template-columns:1fr 110px 130px 80px;
+    <div class="grid px-3.5 py-2 min-w-[520px]" style="grid-template-columns:1fr 110px 130px 80px;
                background:#0e0f11; border-bottom:1px solid #2a2e38;">
       @for (h of ['Test Name','Value','Reference','Flag']; track h) {
         <span style="color:#555b6b;"
@@ -39,7 +39,7 @@ import { LabResult } from '../../../core/models/mednlp.models';
     <!-- Rows -->
     @for (lab of labs; track lab.test; let last = $last) {
       <div
-        class="grid px-3.5 py-2.5 items-center transition-all duration-200"
+        class="grid px-3.5 py-2.5 items-center transition-all duration-200 min-w-[520px]"
         [style.gridTemplateColumns]="'1fr 110px 130px 80px'"
         [style.borderBottom]="last ? 'none' : '1px solid #2a2e38'"
         [style.borderLeft]="lab.status === 'abnormal' ? '3px solid #f87171' : '3px solid #3ecf8e'"

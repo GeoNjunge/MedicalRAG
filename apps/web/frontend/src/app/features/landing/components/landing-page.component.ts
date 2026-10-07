@@ -5,6 +5,7 @@ import { DemoModeService } from '../../../core/services/demo-mode.service';
 import { LOOM_DEMO_URL, DemoSampleId } from '../../../core/constants/demo-samples';
 import { LandingDemoBannerComponent } from './landing-demo-banner.component';
 import { LandingHeroComponent } from './landing-hero.component';
+import { LandingProblemSectionComponent } from './landing-problem-section.component';
 import { LandingMetricsComponent } from './landing-metrics.component';
 import { LandingArchitectureComparisonComponent } from './landing-architecture-comparison.component';
 import { LandingPipelineComponent } from './landing-pipeline.component';
@@ -18,6 +19,7 @@ import { LandingLoomModalComponent } from './landing-loom-modal.component';
   imports: [
     LandingDemoBannerComponent,
     LandingHeroComponent,
+    LandingProblemSectionComponent,
     LandingMetricsComponent,
     LandingArchitectureComparisonComponent,
     LandingPipelineComponent,
@@ -32,6 +34,8 @@ import { LandingLoomModalComponent } from './landing-loom-modal.component';
       (tryDemo)="goToAnalyzer()"
       (exploreArchitecture)="scrollToArchitecture()"
       (openVideo)="videoOpen.set(true)" />
+
+    <app-landing-problem-section />
 
     <app-landing-metrics />
 

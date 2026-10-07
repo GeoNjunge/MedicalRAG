@@ -5,7 +5,7 @@ import { DemoSample, DemoSampleId } from '../../../core/constants/demo-samples';
 import { ResultsSummaryComponent } from '../../analyze/components/results-summary.component';
 import { ResultsDiseasesComponent } from '../../analyze/components/results-diseases.component';
 import { ResultsLabsComponent } from '../../analyze/components/results-labs.component';
-import { ResultsTokenMetricsComponent } from '../../analyze/components/results-token-metrics.component';
+import { ResultsExtractionContextComponent } from '../../analyze/components/results-extraction-context.component';
 
 @Component({
   selector: 'app-landing-sample-panel',
@@ -15,15 +15,15 @@ import { ResultsTokenMetricsComponent } from '../../analyze/components/results-t
     ResultsSummaryComponent,
     ResultsDiseasesComponent,
     ResultsLabsComponent,
-    ResultsTokenMetricsComponent,
+    ResultsExtractionContextComponent,
   ],
   template: `
     <section class="px-6 pb-20">
       <div class="max-w-6xl mx-auto">
         <div class="mb-6">
-          <h2 class="font-[Syne] text-[24px] font-bold m-0 mb-2">Interactive Demo Samples</h2>
-          <p style="color:#8b909e;" class="text-[14px] m-0">
-            Load pre-calculated pipeline outputs instantly — no backend inference required.
+          <h2 class="font-[Syne] text-[24px] font-bold m-0 mb-2">Sample Clinical Outputs</h2>
+          <p style="color:#8b909e;" class="text-[14px] m-0 max-w-2xl leading-[1.7]">
+            Review extracted conditions, labs, summaries, and validated JSON from representative documents.
           </p>
         </div>
 
@@ -48,9 +48,7 @@ import { ResultsTokenMetricsComponent } from '../../analyze/components/results-t
         @if (activeResult) {
           <div class="grid gap-4 lg:grid-cols-2">
             <div class="flex flex-col gap-4">
-              @if (activeResult.token_metrics) {
-                <app-results-token-metrics [metrics]="activeResult.token_metrics" />
-              }
+              <app-results-extraction-context [metrics]="activeResult.token_metrics ?? null" />
               <app-results-summary [summaryText]="activeResult.summary_text" />
               <app-results-diseases [diseases]="activeResult.diseases_json" />
               <app-results-labs [labs]="activeResult.labs_json" />
