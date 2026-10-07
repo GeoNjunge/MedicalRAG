@@ -28,6 +28,8 @@ class AppConfig(BaseSettings):
     GROQ_MODEL: Optional[str] = None
     API_KEY: Optional[str] = None
     REDIS_URL: Optional[str] = None
+    ENCRYPTION_KEY: Optional[str] = None
+    UPLOAD_RATE_LIMIT: str = "10/minute"
 
     model_config = SettingsConfigDict(
           env_file='.env',

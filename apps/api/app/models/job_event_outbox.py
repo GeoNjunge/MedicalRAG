@@ -3,10 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import uuid
 
-from sqlalchemy import Boolean, DateTime, JSON, String, Text
+from sqlalchemy import Boolean, DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
+from app.database.encrypted_types import EncryptedJSON
 
 
 class JobEventOutbox(Base):
@@ -19,7 +20,7 @@ class JobEventOutbox(Base):
     )
     job_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
     event_type: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    payload_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    payload_json: Mapped[dict] = mapped_column(EncryptedJSON, nullable=False)
     published: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     publish_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

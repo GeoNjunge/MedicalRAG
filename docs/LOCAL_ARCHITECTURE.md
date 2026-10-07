@@ -284,3 +284,5 @@ Open `http://localhost:4200`, upload a PDF, and watch progress update live.
 - [Setup guide](./SETUP.md)  - step-by-step install
 - [Architecture overview](./ARCHITECTURE.md)  - pipeline stage details
 - [ML Core README](../ml_core/README.md)  - deeper component reference
+
+

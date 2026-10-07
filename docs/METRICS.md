@@ -4,6 +4,22 @@
 **Model Family:** Qwen 2.5 (0.5B, 1.5B, 3B)  
 **Format:** GGUF (Q4_K_M)
 
+## Important: Token Window vs Full Document
+
+These benchmarks measure performance on **512-token windows**, not full 6-page documents.
+
+Here is why that matters:
+
+The pipeline uses a sliding window approach to handle documents longer than the model's context limit. Each window is processed independently, and results are merged. So the timing data below reflects what happens per window, not the full document end-to-end.
+
+For a 6-page document (roughly 3,000–4,000 tokens), you would run this pipeline 6–8 times with overlapping windows.
+
+**Full 6-page document timing:**
+- Before optimization: ~70s total (6–8 windows × ~10s each)
+- After optimization: ~34s total (6–8 windows × ~4s each)
+
+So the 2.1x speedup holds, but it is at the window level, not per page.
+
 ### The Data Proof
 By instrumenting my functions with a `@time_metrics` decorator, I captured the exact impact of the **global Initialization** refactor:
 
@@ -22,7 +38,7 @@ Global variables are often discouraged in general web dev, but in **AI Engineeri
 
 ![Docling](docling_perf_comparison.png){width=500px height=300px}
 Explanation 
-### Performance Benchmarks (2-Core CPU Laptop)
+### Performance Benchmarks (2-Core CPU Laptop, 512-token window)
 
 The following metrics reflect processing speeds for an identical **6-page complex medical report** using different pipeline configurations and backend runtimes. 
 
@@ -50,8 +66,8 @@ The following metrics contrast the hardware effects of letting concurrent files 
 | Strategy B: Single-Core Throttling | Set OMP=1 / 1 thread per file natively |  1 Thread per Core | ~26s – 28s | ~28.00s |  True Parallel Execution. Drops individual file speed by ~35%, but yields the lowest total group completion time. |
 
 ## 2. LLM Performance
-### Qwen2.5 Comparisons when summarizing single chunk(594 tokens) under same environment(2 core 16gb RAM no GPU)
-**With ollama-cpp**
+### Qwen2.5 Comparisons when summarizing single chunk(512 tokens) under same environment(2 core 16gb RAM no GPU)
+**With llama-cpp**
 
 | **Number of Params** | **Summarization Time** |
 | :--- | :--- |
@@ -59,7 +75,7 @@ The following metrics contrast the hardware effects of letting concurrent files 
 | 1.5B parameters | 33.3977s |
 | 0.5B parameters | 11.8657s |
 
-**Without ollama-cpp**
+**Without llama-cpp**
 
 | **Number of Params** |  **Summarization Time** |
 | :--- | :--- |

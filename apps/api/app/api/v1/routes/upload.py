@@ -6,6 +6,8 @@ from app.database.session import get_db
 from app.services.upload_services import upload_file
 from app.core.logger_setup import CentralizedLogger
 from app.core.auth import verify_api_key
+from app.core.rate_limit import limiter
+from app.core.config import config as app_config
 from app.core.audit_logger import (
     log_job_status_fetched,
     log_sse_connected,
@@ -22,6 +24,7 @@ router = APIRouter()
 
 
 @router.post("/upload", response_model=UploadResponseSchema)
+@limiter.limit(app_config.UPLOAD_RATE_LIMIT)
 async def upload_medical_file(
     request: Request,
     file: UploadFile = File(...),
@@ -52,9 +55,10 @@ async def upload_medical_file(
 
 
 @router.get("/jobs/{job_id}")
+@limiter.limit("60/minute")
 async def get_job_status(
-    job_id: str,
     request: Request,
+    job_id: str,
     db: Session = Depends(get_db),
     _: None = Depends(verify_api_key),
 ):
@@ -88,9 +92,10 @@ async def _event_generator(job_id: str):
 
 
 @router.get("/jobs/{job_id}/events")
+@limiter.limit("60/minute")
 async def stream_job_events(
-    job_id: str,
     request: Request,
+    job_id: str,
     db: Session = Depends(get_db),
     _: None = Depends(verify_api_key),
 ):

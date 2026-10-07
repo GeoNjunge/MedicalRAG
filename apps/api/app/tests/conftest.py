@@ -1,13 +1,26 @@
+import os
+
+from cryptography.fernet import Fernet
+
+# Must be set before application modules load AppConfig / encryption helpers.
+os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+os.environ["ENCRYPTION_KEY"] = Fernet.generate_key().decode()
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.security_encryption import reset_encryption_client
 from app.main import app
 from app.database.session import get_db
 from app.database.base import Base
+from app.models.job import Job  # noqa: F401
 from app.models.job_event_outbox import JobEventOutbox  # noqa: F401
+from app.core.rate_limit import limiter
+
+reset_encryption_client()
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(
@@ -16,6 +29,13 @@ engine = create_engine(
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+@pytest.fixture(autouse=True)
+def disable_rate_limiter():
+    limiter.enabled = False
+    yield
+    limiter.enabled = True
 
 
 @pytest.fixture

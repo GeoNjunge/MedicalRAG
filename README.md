@@ -1,164 +1,187 @@
-﻿# MedicalRAG
+﻿# MedicalRAG(MedNLP)
 
-A medical document analysis system that turns PDFs into structured clinical data diseases, lab results, ICD-10 codes, and a short summary with a focus on **reliability and reduced token consumption**.
+I built MedicalRAG to solve a problem I kept noticing in healthcare software: most systems simply feed raw PDF documents to an LLM and hope for the best. That approach is fast, but in medical workflows it can be risky. Important facts get missed, details get made up, and the output is hard to trust.
 
-Built for low-resource environments: CPU-only hardware, small local models, and cloud deployment without loading gigabytes of NLP weights onto the server.
+MedicalRAG is a document processing system that takes medical PDFs, extracts the useful information first, and then builds a summary from that structured data. The idea is simple: don’t ask the model to read a messy document from scratch if you can first pull out the facts it actually needs.
 
 ---
 
 ## What it does
 
-Upload a medical PDF and the system returns:
+Upload a medical PDF and the system can:
 
-- **Diseases** with confidence scores and ICD-10 codes
-- **Lab results** with values, units, and normal/abnormal flags
-- **A plain-text summary** written from the extracted data (not from a raw document dump)
+- Extract diseases and clinical findings
+- Pull out lab values and test results
+- Map diagnoses to ICD-10 codes where possible
+- Generate a short plain-language summary based on the extracted facts
 
-The key idea: extract facts first with specialized tools, then let the LLM summarize only what was already found. This cuts down on made-up details.
-
----
-
-## Two ways to run it
-
-MedicalRAG supports two modes, controlled by `APP_ENV`:
-
-| Mode | Best for | LLM | NLP stack |
-|------|----------|-----|-----------|
-| **Local (dev)** | Research, offline use, tuning | Qwen 2.5 via llama.cpp on your machine | Full pipeline: PubMedBERT, medSpaCy, Docling |
-| **Production** | Hosted deployment (Render, Vercel, etc.) | Groq cloud API | Lightweight: PyMuPDF + Groq prompts |
-
-Read the architecture guides for details:
-
-- **[Production architecture](docs/PROD_ARCHITECTURE.md)**   cloud pipeline, Groq, deployment
-- **[Local LLM architecture](docs/LOCAL_ARCHITECTURE.md)**   offline models, Redis worker, llama.cpp
+This is useful when you want a system that is more reliable, more explainable, and less likely to hallucinate.
 
 ---
 
-## Quick start
+## Why I built it
 
-### Production (minimal setup)
+Medical documents are messy. They are long, noisy, full of tables, headers, and inconsistent formatting. A lot of AI systems try to solve that by sending the whole document to a model and asking it to figure it out.
 
-1. Clone the repo and install production dependencies:
-   ```bash
-   pip install -r requirements-prod.txt
-   ```
-2. Copy `.env.example` to `apps/api/.env` and set `APP_ENV=production` plus your `GROQ_API_KEY`.
-3. Start the API from `apps/api`:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-4. For the frontend:
-   ```bash
-   cd apps/web/frontend
-   npm install
-   npm start
-   ```
+I wanted a better approach.
 
-### Local development (full pipeline)
-
-You need Redis, Ollama (for model files), and the dev dependencies. See the full walkthrough in **[docs/SETUP.md](docs/SETUP.md)**.
-
-Short version   three terminals:
-
-```bash
-# 1. Redis
-redis-server
-
-# 2. Worker (from apps/api)
-python -m app.worker.worker
-
-# 3. API (from apps/api)
-uvicorn app.main:app --reload
-```
+The system first reads the document and extracts structured information using rules and specialized NLP models. Only then does it summarize the result. That helps keep the output grounded in the actual document instead of the model guessing.
 
 ---
 
-## Project structure
+## The real-world problem behind it
 
-```text
-MedicalRAG/
-├── apps/
-│   ├── api/              # FastAPI backend, job queue, upload API
-│   └── web/frontend/     # Angular 18 web app
-├── ml_core/              # AI pipeline (extraction, summarization, models)
-├── docs/                 # Architecture, setup, benchmarks
-├── infra/docker/         # Dockerfile for container deploys
-├── research/             # Benchmarks and experiments
-└── test_results/         # Sample outputs across model sizes
-```
+I built this with a very specific real-world goal in mind: helping smaller clinics, especially in places with limited infrastructure, make better use of medical records without needing expensive hardware or constant internet access.
 
----
+In many settings, clinics do not have powerful GPUs, high-end servers, or stable cloud connectivity. They often work on regular laptops and limited bandwidth. I wanted a system that could still help them process patient documents in a practical way.
 
-## How the pipeline works
+That is why the project is designed around low-resource thinking:
+- local processing where possible
+- lighter models and efficient workflows
+- offline-friendly behavior
+- systems that can run on ordinary consumer hardware
 
-```text
-PDF  →  Extract text  →  Chunk & clean  →  Find diseases & labs  →  Summarize  →  JSON results
-```
-
-**Local mode** uses deterministic NLP (PubMedBERT, medSpaCy, ICD-10 lookup) before summarization.
-
-**Production mode** uses Groq for both extraction and summarization to keep the server lean.
-
-Stage-by-stage breakdown: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+This is not an “ideal lab” project. It is a system built for the reality many clinics face.
 
 ---
 
-## Performance highlights
+## How it works
 
-On a 2-core CPU laptop (no GPU):
+The basic flow is:
 
-| Metric | Before optimization | After |
-|--------|---------------------|-------|
-| Full pipeline | ~70s | ~34s |
-| LLM summary step | ~5s | ~150ms |
+PDF → read text → clean and split content → extract key facts → summarize
 
-Details and benchmarks: [docs/METRICS.md](docs/METRICS.md)
+At a high level, the pipeline does this:
+
+1. Read the document text from the PDF
+2. Break it into smaller sections
+3. Find disease names and relevant clinical data
+4. Extract labs and values
+5. Clean up and organize the results
+6. Summarize only the extracted facts
+
+This keeps the whole process more controlled and makes the output much easier to trust.
 
 ---
 
-## Documentation
+## Local and production setup
 
-| Doc | What it covers |
-|-----|----------------|
-| [SETUP.md](docs/SETUP.md) | Install dependencies, Ollama, Redis, run commands |
-| [PROD_ARCHITECTURE.md](docs/PROD_ARCHITECTURE.md) | Production cloud pipeline |
-| [LOCAL_ARCHITECTURE.md](docs/LOCAL_ARCHITECTURE.md) | Local LLM and NLP stack |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Pipeline stages and design choices |
-| [METRICS.md](docs/METRICS.md) | Benchmarks and timing data |
-| [DECISIONS.md](docs/DECISIONS.md) | Why specific tools were chosen |
-| [apps/api/README.md](apps/api/README.md) | Backend setup |
-| [apps/web/frontend/README.md](apps/web/frontend/README.md) | Frontend setup |
-| [ml_core/README.md](ml_core/README.md) | ML pipeline components |
+The project supports two modes:
+
+### Local mode
+This is the full research/development setup. It runs locally on a machine and uses a more complete NLP pipeline with offline models.
+
+Best for:
+- Offline work
+- Research and experimentation
+- Lower-resource local development
+
+### Production mode
+This is the lighter cloud version. It keeps the app lean by using external API services for the heavier reasoning work.
+
+Best for:
+- Hosted deployment
+- Faster setup
+- Lower local memory usage
+
+---
+
+## Performance and engineering focus
+
+I also spent a lot of time on performance and reliability. A lot of the work here was about reducing unnecessary model reloads, optimizing CPU use, and getting the system to behave predictably under real constraints.
+
+Some of the practical engineering work included:
+
+- reducing cold-start latency by avoiding repeated heavy model initialization
+- improving local inference performance on CPU-only machines
+- tuning how models are loaded and reused
+- improving job flow and progress tracking
+- making the pipeline more robust for real-world use
+
+This project is as much about systems design and optimization as it is about AI.
 
 ---
 
 ## Tech stack
 
-| Layer | Tools |
-|-------|-------|
-| API | FastAPI, SQLAlchemy, SQLite |
-| Job queue (local) | Redis, RQ |
-| Document parsing | PyMuPDF, Docling |
-| Disease NER | PubMedBERT (fine-tuned) |
-| Lab extraction | medSpaCy |
-| Embeddings | sentence-transformers (MiniLM) |
-| Local LLM | llama.cpp + Qwen 2.5 |
-| Production LLM | Groq API |
-| Frontend | Angular 18, Tailwind CSS |
+The project uses a mix of backend, frontend, NLP, and AI tooling:
+
+- FastAPI for the backend
+- Redis for background job processing
+- Angular for the frontend
+- Python-based NLP pipeline
+- Local model inference for offline use
+- Cloud-based LLM access for lighter production deployment
 
 ---
 
-## Limitations
+## What makes this project different
 
-- No model fine-tuning in this repo   uses pre-trained weights
-- Evaluation is mostly rule-based and synthetic data
-- Production mode relies on LLM prompts for extraction (less deterministic than local NER)
-- Scanned PDFs work best in local mode (Docling OCR); production uses PyMuPDF text extraction only
+A lot of AI demos stop at “upload a file and show a summary.”
+
+This project goes a bit further:
+
+- it tries to reduce hallucinations
+- it uses extracted facts instead of raw document dumping
+- it works with messy real-world healthcare content
+- it tries to stay practical on limited hardware
+- it balances model power with reliability
+
+That is the core idea behind MedicalRAG.
 
 ---
+
+## Challenges and limitations
+
+This is still a research-style and prototype-oriented project in parts. It is not trying to pretend it is a perfect production healthcare system yet.
+
+Some limitations include:
+
+- medical documents can be inconsistent and hard to parse
+- real clinical workflows need deeper validation and review
+- the local pipeline depends on model setup and hardware constraints
+- production behavior can vary depending on the upstream model provider
+
+So this is a serious engineering project, but it is still evolving.
+
+---
+
+## Why I’m proud of it
+
+What I like most about this project is that it tries to solve a real problem instead of just showing off AI output.
+
+It is built around a practical idea:
+
+If the system has to make decisions in a high-stakes domain, it should not rely on a model guessing from a noisy document. It should extract meaningful facts first and only then generate a summary.
+
+That approach is more thoughtful, more reliable, and more useful in the real world.
+
+It also matters because I designed it for settings where resources are limited. A small clinic should not need a data center to benefit from this kind of technology. It should work on everyday hardware, with reasonable performance and realistic constraints.
+
+---
+
+## Project status
+
+This project is a working prototype and learning platform with a strong engineering focus. It combines AI work, backend architecture, performance tuning, and real-world system constraints.
+
+It is not just a toy demo — it is a serious attempt at building a medical document pipeline that is more grounded, more efficient, and more accountable.
+
+---
+
+## Roadmap: Next optimizations
+
+The current bottleneck is Python + CPU-bound NLP inference. The next phase is:
+
+1. **C++ worker pool for inference** — Move the expensive parts (model loading, forward pass) into a native C++ service with manual memory management. This should give another 2–3x speedup.
+
+2. **Parallel window processing** — Instead of sliding windows sequentially, spawn multiple workers to process overlapping windows concurrently. On a 4-core machine, this could be 3–4x faster.
+
+3. **Quantized models on GPU if available** — For clinics that have GPU access, quantized model inference would be another order of magnitude faster.
+
+These are intentionally left for later because the current approach works well for the target use case (single-machine, offline processing). But they unlock real scale if needed.
 
 ## Author
 
-**George Njunge**   Backend & AI Systems Engineer
+George Njunge
 
-Focused on building reliable AI systems under real-world hardware constraints.
+I’m focused on building reliable software systems, especially where AI, backend engineering, and real-world constraints meet.

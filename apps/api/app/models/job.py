@@ -1,9 +1,11 @@
-from sqlalchemy import String, Integer, DateTime, Text, JSON
+from sqlalchemy import String, Integer, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime, timezone
 import uuid
 
 from app.database.base import Base
+from app.database.encrypted_types import EncryptedJSON, EncryptedString
+
 
 class Job(Base):
     __tablename__ = "jobs"
@@ -12,14 +14,14 @@ class Job(Base):
     id: Mapped[str] = mapped_column(
         String, primary_key=True, default=lambda: str(uuid.uuid4())
     )
-    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    patient_id: Mapped[str] = mapped_column(EncryptedString, nullable=False)
 
     # Input metadata
     input_type: Mapped[str] = mapped_column(String, nullable=False)
     file_url: Mapped[str] = mapped_column(String, nullable=True)
-    original_filename: Mapped[str] = mapped_column(String, nullable=True)
+    original_filename: Mapped[str] = mapped_column(EncryptedString, nullable=True)
     file_hash: Mapped[str] = mapped_column(String, nullable=True)
-    file_path: Mapped[str] = mapped_column(String, nullable=True, unique=True)
+    file_path: Mapped[str] = mapped_column(EncryptedString, nullable=True, unique=True)
 
     # State management
     status: Mapped[str] = mapped_column(String, default="pending", index=True)
@@ -34,15 +36,15 @@ class Job(Base):
     started_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     completed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
-    # Partial results
-    extracted_text: Mapped[str] = mapped_column(Text, nullable=True)
-    diseases_json: Mapped[dict] = mapped_column(JSON, nullable=True)
-    labs_json: Mapped[dict] = mapped_column(JSON, nullable=True)
-    summary_text: Mapped[str] = mapped_column(Text, nullable=True)
-    token_metrics_json: Mapped[dict] = mapped_column(JSON, nullable=True)
+    # Partial results (PHI — encrypted at rest)
+    extracted_text: Mapped[str] = mapped_column(EncryptedString, nullable=True)
+    diseases_json: Mapped[dict] = mapped_column(EncryptedJSON, nullable=True)
+    labs_json: Mapped[dict] = mapped_column(EncryptedJSON, nullable=True)
+    summary_text: Mapped[str] = mapped_column(EncryptedString, nullable=True)
+    token_metrics_json: Mapped[dict] = mapped_column(EncryptedJSON, nullable=True)
 
     # Errors
-    error_message: Mapped[str] = mapped_column(Text, nullable=True)
+    error_message: Mapped[str] = mapped_column(EncryptedString, nullable=True)
     last_retry_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     # Observability
@@ -50,5 +52,7 @@ class Job(Base):
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default= lambda: datetime.now(timezone.utc), onupdate= lambda: datetime.now(timezone.utc)
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )

@@ -28,3 +28,8 @@ redis
 
 # PostgreSQL driver (sync SQLAlchemy; asyncpg URLs are normalized at runtime)
 psycopg[binary]>=3.1
+
+# Security, migrations, and rate limiting
+cryptography
+alembic
+slowapi
