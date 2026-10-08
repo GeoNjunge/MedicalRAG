@@ -39,6 +39,15 @@ spec:
             - name: ollama-models
               mountPath: /home/ubuntu/.ollama/models
               readOnly: true
+          resources:
+            # Each replica loads the full dev NLP stack (HF + medspaCy + llama.cpp GGUF).
+            # Scale replicas only when host RAM can sustain N × ~4–6 GiB RSS per worker.
+            requests:
+              memory: "3Gi"
+              cpu: "1000m"
+            limits:
+              memory: "6Gi"
+              cpu: "2000m"
           readinessProbe:
             exec:
               command:
