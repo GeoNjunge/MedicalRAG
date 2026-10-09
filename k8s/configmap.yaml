@@ -10,6 +10,8 @@ data:
   WORKERS: "1"
   APP_ENV: "production"
   WORKER_APP_ENV: "dev"
+  SIM_BUDGET_GIB: "6.5"
+  SIM_MAX_RQ_WORKERS: "1"
   REDIS_URL: "redis://redis:6379/0"
   DATABASE_URL: "postgresql+psycopg://medicalrag:medicalrag@postgres:5432/medicalrag"
   BACKEND_URL: "http://loadbalancer:8080"
