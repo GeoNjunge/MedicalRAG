@@ -273,8 +273,10 @@ Open `http://localhost:4200`, upload a PDF, and watch progress update live.
 
 **Out of memory**
 
-- Try the smaller `qwen_0.5b` model.
-- Close other heavy applications; the full NLP stack needs substantial RAM.
+- Each **RQ worker process** loads its own copy of medspaCy, HF NER, and the llama.cpp summarizer (~4–6 GiB RSS after warm-up). Running multiple workers (`docker compose --scale rq-worker=N`, extra K8s replicas, or several `python -m app.worker.worker` terminals) **multiplies** that cost.
+- Keep **one worker** on 16 GiB hosts; scale API replicas for prod (Groq) instead.
+- Try the smaller `qwen_0.5b` model in `resources.py` if you must reduce RAM.
+- Close other heavy applications; watch worker startup logs for `RQ worker pipeline warmed; process RSS`.
 
 ---
 
