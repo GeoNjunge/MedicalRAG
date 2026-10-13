@@ -183,7 +183,9 @@ Run every command from WSL, repo root: `cd /home/ubuntu/projects/MedicalRAG`
 7. **Scale API and workers**
 
    ```bash
-   docker compose up -d --scale api=3 --scale rq-worker=4
+   docker compose up -d --scale api=3
+   # rq-worker: default 1; each extra replica adds ~4–6 GiB (full NLP stack per process)
+   # docker compose up -d --scale rq-worker=2
    ```
 
    Adds more containers for services `api` and `rq-worker`; Compose DNS returns multiple backends for `api`, and Nginx `least_conn` balances across them.
@@ -311,7 +313,7 @@ Assumes repo at `/home/ubuntu/projects/MedicalRAG` and paths in manifests match.
 
    ```bash
    kubectl scale deployment/api -n medicalrag --replicas=3
-   kubectl scale deployment/rq-worker -n medicalrag --replicas=4
+   kubectl scale deployment/rq-worker -n medicalrag --replicas=1
    ```
 
    Patches Deployment `spec.replicas`; controllers create/destroy Pods to match.

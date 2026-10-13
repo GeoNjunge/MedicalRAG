@@ -18,7 +18,9 @@ Redis ← RQ workers (APP_ENV=dev, local NLP pipeline)
 | Data | `vpc-data` | `data` | Redis, Postgres |
 | Workers | `vpc-workers` | `workers` | RQ (`entrypoint-worker.sh`) |
 
-**Note:** Production API jobs run **in-process** (Groq). RQ workers serve the **dev** pipeline for local/CI NLP testing; scale workers with `APP_ENV=dev` independently of prod API replicas.
+**Note:** Production API jobs run **in-process** (Groq). RQ workers serve the **dev** pipeline for local/CI NLP testing.
+
+**Memory:** Each RQ worker is a separate process that warms the full local NLP stack at startup (~4–6 GiB RSS typical). Scaling `rq-worker` replicas **multiplies** that footprint (unlike API replicas in production mode, which stay lightweight). On a 16 GiB machine, keep **one** worker unless you have headroom; see [Metrics](./METRICS.md#rq-worker-memory-note). Compose sets `mem_limit` (default `6g` via `RQ_WORKER_MEM_LIMIT`); K8s worker pods request/limit memory in `k8s/worker-deployment.yaml`.
 
 ## Prerequisites
 
@@ -44,14 +46,19 @@ Redis ← RQ workers (APP_ENV=dev, local NLP pipeline)
    # DATABASE_URL=postgresql+psycopg://medicalrag:medicalrag@postgres:5432/medicalrag
    ```
 
-3. **Start the full stack** (LB + API + Redis + Postgres + workers):
+3. **Start the full stack** (LB + API + Redis + Postgres + workers) with a **6.5 GiB RAM budget** (recommended on 11 GiB WSL):
    ```bash
-   docker compose up -d
+   ./scripts/sim-up.sh
+   # Optional: measure worker RSS before scaling (updates apps/api/logs/.rq_worker_rss_gib)
+   ./scripts/sim-up.sh --probe
    ```
+   Plain `docker compose up -d` does not cap worker replicas; use `sim-up.sh` for WSL simulations.
 
-4. **Scale API and workers** (Compose DNS round-robins `api` for Nginx):
+4. **Scale API** (Compose DNS round-robins `api` for Nginx). Increase **rq-worker** only when host RAM allows (~4–6 GiB per replica):
    ```bash
-   docker compose up -d --scale api=3 --scale rq-worker=4
+   docker compose up -d --scale api=3
+   # Optional — default is 1 worker; e.g. 32 GiB+ host:
+   docker compose up -d --scale rq-worker=2
    ```
 
 5. **Verify**:
@@ -76,6 +83,7 @@ Redis ← RQ workers (APP_ENV=dev, local NLP pipeline)
 | `MEDICALRAG_VENV` | `./venv` | Host path mounted to `/app/venv` |
 | `MEDICALRAG_MODELS` | `./ml_core/src/ml_core/models` | HF / disease model weights |
 | `OLLAMA_MODELS` | `$HOME/.ollama/models` | GGUF blobs for local summarizer |
+| `RQ_WORKER_MEM_LIMIT` | `6g` | Compose cgroup cap per worker container (OOM guard) |
 
 See [`infra/network/vpc-subnets.env`](../infra/network/vpc-subnets.env) for the simulated VPC layout.
 
@@ -101,10 +109,10 @@ See [`infra/network/vpc-subnets.env`](../infra/network/vpc-subnets.env) for the 
    kubectl apply -k k8s/
    ```
 
-5. **Scale replicas**:
+5. **Scale replicas** (raise `rq-worker` only with enough node memory — each pod loads its own model set):
    ```bash
    kubectl scale deployment/api -n medicalrag --replicas=3
-   kubectl scale deployment/rq-worker -n medicalrag --replicas=4
+   kubectl scale deployment/rq-worker -n medicalrag --replicas=1
    ```
 
 6. **Access** via NodePort `30080` or port-forward:
@@ -122,7 +130,7 @@ After unit tests, validate the image and compose config:
 ```bash
 docker compose config --quiet
 docker compose build
-docker compose up -d --scale api=2 --scale rq-worker=2
+docker compose up -d --scale api=2
 curl -sf http://localhost:8080/healthz
 docker compose down -v
 ```
