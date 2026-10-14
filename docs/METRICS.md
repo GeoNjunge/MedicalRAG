@@ -1,4 +1,41 @@
 # Technical Benchmark: Medical Summarization Performance
+
+## Primary: end-to-end dev pipeline (instrumented)
+
+**Source:** [`apps/api/logs/real_metrics.md`](../apps/api/logs/real_metrics.md) (Oct 2026 runs, warm worker after global init)  
+**Hardware:** WSL Ubuntu, CPU-only (same class as local RQ worker)  
+**Summarizer:** Qwen 2.5 **1.5B** GGUF via llama.cpp (`LocalLlamaSummarizer`)  
+**PDF path:** PyMuPDF extraction (not Docling) on a single complex outpatient progress note (~486 document tokens)
+
+### Per-stage latency (8 consecutive jobs)
+
+| Stage | Avg | Min | Max |
+| :--- | ---: | ---: | ---: |
+| PDF extract (`extract_text_from_pdf`) | 0.02s | 0.004s | 0.11s |
+| Disease NER + negation (`get_negative_entities`) | 4.08s | 3.58s | 4.69s |
+| Lab extract (`extract_labs`) | 0.09s | 0.06s | 0.12s |
+| Summarize (`summarize_content`) | 44.85s | 40.90s | 49.75s |
+| **Full job (`run_ner_pipeline`)** | **50.03s** | **47.00s** | **55.06s** |
+
+**Cold vs warm:** First job after worker start paid ~0.11s PDF init and **55.06s** total; subsequent jobs averaged **~50s** with sub-10ms PDF reads.
+
+### Token compression (sample trace)
+
+| Metric | Value |
+| :--- | ---: |
+| Whole-document tokens | 486 |
+| Summarizer input tokens | 410 |
+| Tokens saved | 76 |
+| Reduction | 15.64% |
+
+### RQ worker memory note
+
+Each RQ worker process calls `initialize_pipeline_resources()` once at startup and keeps HF/medspaCy/llama weights resident. **Scaling `--scale rq-worker=N` or K8s replicas loads N independent copies** (~4–6 GiB RSS each on this stack). Prefer **one worker** on 16 GiB hosts; scale API (Groq) separately for prod throughput.
+
+---
+
+## Historical: sliding-window & Docling benchmarks
+
 **Date:** May 2026  
 **Hardware:** 2-Core CPU / 4 Logical Processors (WSL Ubuntu)  
 **Model Family:** Qwen 2.5 (0.5B, 1.5B, 3B)  
