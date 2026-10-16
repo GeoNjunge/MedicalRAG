@@ -18,7 +18,7 @@ For a 6-page document (roughly 3,000–4,000 tokens), you would run this pipelin
 - Before optimization: ~70s total (6–8 windows × ~10s each)
 - After optimization: ~34s total (6–8 windows × ~4s each)
 
-So the 2.1x speedup holds, but it is at the window level, not per page.
+So the 2.1x speedup
 
 ### The Data Proof
 By instrumenting my functions with a `@time_metrics` decorator, I captured the exact impact of the **global Initialization** refactor:
@@ -42,7 +42,7 @@ Explanation
 
 The following metrics reflect processing speeds for an identical **6-page complex medical report** using different pipeline configurations and backend runtimes. 
 
-| Backend Engine | Configuration Details | Thread Count | Avg. Execution Time | Status / Efficiency |
+| Backend | Config | No of Threads | Avg Extraction Time | Efficiency |
 | :--- | :--- | :--- | :--- | :--- |
 | **ONNX Runtime** | `Docling Native Configuration` | **2 Threads** | **19.25s** |  **Optimal (1:1 Core Match)** |
 | **ONNX Runtime** | `All Envs Forced (MKL=1)` | **2 Threads** | **21.73s** |  Highly Efficient |
@@ -57,7 +57,7 @@ The following metrics reflect processing speeds for an identical **6-page comple
 
 
 ### Concurrency Benchmarks (Processing 2 Documents Simultaneously)
-The following metrics contrast the hardware effects of letting concurrent files fight for resources versus locking them into a predictable sequential pipeline.
+The following metrics compare the effects of letting files processing concurrently fight for resources versus queing them into a sequential pipeline.
 
 | Concurrency Architecture | Strategy Details | Active Core Usage | Execution Time per File | Total Pipeline Duration | Hardware / User Impact |
 |---|---|---|---|---|---|
@@ -78,7 +78,7 @@ The following metrics contrast the hardware effects of letting concurrent files 
 **Without llama-cpp**
 
 | **Number of Params** |  **Summarization Time** |
-| :--- | :--- |
+| :--- | :--- | 
 | 3B parameters | 110.7667s |
 | 1.5B parameters | 63.2841s |
 | 0.5B parameters | 34.6701s |
