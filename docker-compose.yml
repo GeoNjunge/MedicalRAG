@@ -1,0 +1,128 @@
+# Local CI/CD stack: bind-mounted repo + venv/models (zero-copy), scalable API & RQ workers.
+# API startup matches run_prod.sh via infra/scripts/entrypoint-api.sh
+
+name: medicalrag-local
+
+x-api-common: &api-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      PREINSTALL_DEPS: ${PREINSTALL_DEPS:-0}
+  image: medicalrag-local:runtime
+  env_file:
+    - .env
+  environment: &api-env
+    MEDICALRAG_ROOT: /app
+    HOST: 0.0.0.0
+    PORT: "10000"
+    WORKERS: ${WORKERS:-1}
+    REDIS_URL: redis://redis:6379/0
+    DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://medicalrag:medicalrag@postgres:5432/medicalrag}
+  volumes: &repo-volumes
+    - type: bind
+      source: .
+      target: /app
+    - type: bind
+      source: ${MEDICALRAG_VENV:-./venv}
+      target: /app/venv
+    - type: bind
+      source: ${MEDICALRAG_MODELS:-./ml_core/src/ml_core/models}
+      target: /app/ml_core/src/ml_core/models
+      read_only: true
+    - type: bind
+      source: ${OLLAMA_MODELS:-${HOME}/.ollama/models}
+      target: /home/ubuntu/.ollama/models
+      read_only: true
+  networks:
+    - vpc-app
+    - vpc-data
+  depends_on:
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD-SHELL", "curl -sf http://127.0.0.1:10000/ || exit 1"]
+    interval: 15s
+    timeout: 5s
+    retries: 8
+    start_period: 40s
+
+services:
+  loadbalancer:
+    image: nginx:1.27-alpine
+    ports:
+      - "${LB_PORT:-8080}:8080"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - vpc-edge
+      - vpc-app
+    depends_on:
+      api:
+        condition: service_healthy
+
+  api:
+    <<: *api-common
+    command: ["/usr/local/bin/entrypoint-api.sh"]
+    expose:
+      - "10000"
+  rq-worker:
+    <<: *api-common
+    command: ["/usr/local/bin/entrypoint-worker.sh"]
+    environment:
+      <<: *api-env
+      WORKER_APP_ENV: dev
+      HF_HUB_OFFLINE: ${HF_HUB_OFFLINE:-1}
+    networks:
+      - vpc-workers
+      - vpc-data
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "/app/venv/bin/python3 -c \"import redis; redis.from_url('redis://redis:6379/0').ping()\" || python3 -c \"import redis; redis.from_url('redis://redis:6379/0').ping()\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    networks:
+      - vpc-data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: medicalrag
+      POSTGRES_PASSWORD: medicalrag
+      POSTGRES_DB: medicalrag
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - vpc-data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medicalrag -d medicalrag"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+networks:
+  vpc-edge:
+    driver: bridge
+  vpc-app:
+    driver: bridge
+  vpc-data:
+    driver: bridge
+  vpc-workers:
+    driver: bridge
+
+volumes:
+  postgres-data:

@@ -1,0 +1,63 @@
+# Simulated VPC segmentation: edge → app → data/workers
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-edge-to-api
+  namespace: medicalrag
+spec:
+  podSelector:
+    matchLabels:
+      tier: application
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              tier: edge
+      ports:
+        - protocol: TCP
+          port: 10000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-workers-to-redis
+  namespace: medicalrag
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              tier: application
+        - podSelector:
+            matchLabels:
+              tier: workers
+      ports:
+        - protocol: TCP
+          port: 6379
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-to-postgres
+  namespace: medicalrag
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              tier: application
+      ports:
+        - protocol: TCP
+          port: 5432

@@ -1,0 +1,15 @@
+# KinD cluster for MedicalRAG local K8s (WSL2 / Linux).
+# extraMounts expose WSL host paths inside the KinD node so hostPath volumes work.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 8080
+        protocol: TCP
+    extraMounts:
+      - hostPath: /home/ubuntu/projects/MedicalRAG
+        containerPath: /home/ubuntu/projects/MedicalRAG
+      - hostPath: /home/ubuntu/.ollama/models
+        containerPath: /home/ubuntu/.ollama/models

@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: medicalrag
+  labels:
+    app: api
+    tier: application
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+        tier: application
+    spec:
+      containers:
+        - name: api
+          image: medicalrag-local:runtime
+          imagePullPolicy: IfNotPresent
+          command: ["/usr/local/bin/entrypoint-api.sh"]
+          ports:
+            - containerPort: 10000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: medicalrag-config
+            - secretRef:
+                name: medicalrag-secrets
+                optional: true
+          volumeMounts:
+            - name: repo
+              mountPath: /app
+            - name: venv
+              mountPath: /app/venv
+            - name: ml-models
+              mountPath: /app/ml_core/src/ml_core/models
+              readOnly: true
+            - name: ollama-models
+              mountPath: /home/ubuntu/.ollama/models
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 45
+            periodSeconds: 20
+      volumes:
+        - name: repo
+          hostPath:
+            path: /home/ubuntu/projects/MedicalRAG
+            type: Directory
+        - name: venv
+          hostPath:
+            path: /home/ubuntu/projects/MedicalRAG/venv
+            type: Directory
+        - name: ml-models
+          hostPath:
+            path: /home/ubuntu/projects/MedicalRAG/ml_core/src/ml_core/models
+            type: DirectoryOrCreate
+        - name: ollama-models
+          hostPath:
+            path: /home/ubuntu/.ollama/models
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: medicalrag
+  labels:
+    app: api
+spec:
+  selector:
+    app: api
+  ports:
+    - port: 10000
+      targetPort: http

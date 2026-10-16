@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rq-worker
+  namespace: medicalrag
+  labels:
+    app: rq-worker
+    tier: workers
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rq-worker
+  template:
+    metadata:
+      labels:
+        app: rq-worker
+        tier: workers
+    spec:
+      containers:
+        - name: rq-worker
+          image: medicalrag-local:runtime
+          imagePullPolicy: IfNotPresent
+          command: ["/usr/local/bin/entrypoint-worker.sh"]
+          envFrom:
+            - configMapRef:
+                name: medicalrag-config
+            - secretRef:
+                name: medicalrag-secrets
+                optional: true
+          volumeMounts:
+            - name: repo
+              mountPath: /app
+            - name: venv
+              mountPath: /app/venv
+            - name: ml-models
+              mountPath: /app/ml_core/src/ml_core/models
+              readOnly: true
+            - name: ollama-models
+              mountPath: /home/ubuntu/.ollama/models
+              readOnly: true
+          readinessProbe:
+            exec:
+              command:
+                - /app/venv/bin/python3
+                - -c
+                - "import redis; redis.from_url('redis://redis:6379/0').ping()"
+            initialDelaySeconds: 60
+            periodSeconds: 30
+      volumes:
+        - name: repo
+          hostPath:
+            path: /home/ubuntu/projects/MedicalRAG
+            type: Directory
+        - name: venv
+          hostPath:
+            path: /home/ubuntu/projects/MedicalRAG/venv
+            type: Directory
+        - name: ml-models
+          hostPath:
+            path: /home/ubuntu/projects/MedicalRAG/ml_core/src/ml_core/models
+            type: DirectoryOrCreate
+        - name: ollama-models
+          hostPath:
+            path: /home/ubuntu/.ollama/models
+            type: DirectoryOrCreate

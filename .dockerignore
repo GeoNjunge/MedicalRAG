@@ -1,0 +1,16 @@
+# Zero-copy build context — exclude heavy / host-specific paths from image layers.
+.git
+.github
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+venv
+.venv
+.env
+.env.*
+ml_core/src/ml_core/models/**
+test_results
+research
+apps/web/frontend/node_modules
+*.md
+!infra/**
