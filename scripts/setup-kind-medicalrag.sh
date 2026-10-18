@@ -35,7 +35,7 @@ kind load docker-image medicalrag-local:runtime --name "$CLUSTER_NAME"
 
 kubectl config use-context "kind-${CLUSTER_NAME}"
 kubectl apply -f k8s/secret.yaml
-kubectl apply -k k8s/
+"${ROOT}/scripts/sim-k8s-apply.sh"
 
 echo "Waiting for API..."
 kubectl rollout status deployment/api -n medicalrag --timeout=300s
